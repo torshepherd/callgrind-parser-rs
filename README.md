@@ -1,113 +1,81 @@
-# Callgrind tools workspace
+# callgrind-parser-rs
 
-This project is a stubbed Rust workspace for a Callgrind parser and four tools,
-plus a working reproducibility harness that pins SQLite, Valgrind/Callgrind, a
-deterministic fixture, a realistic query workload, and a profiling matrix.
+`callgrind-parser-rs` is a Rust library for reading and analyzing the
+[Callgrind profile format](https://valgrind.org/docs/manual/cl-format.html).
+The repository also houses a family of frontends built on the same parser:
+annotation and conversion tools, a terminal interface, and a web interface.
 
-See [PROJECT-OUTLINE.md](PROJECT-OUTLINE.md) for the intended architecture and
-development model.
+The parser is the center of the project. The applications exist to make
+Callgrind data useful in more places without each tool growing its own partial
+and subtly incompatible reader.
+
+> [!NOTE]
+> The project is at the scaffolding stage. The workspace and its reproducible
+> test environment work, but the parser and applications are not implemented
+> beyond small compiling stubs.
+
+## Why this exists
+
+Linux `perf` and hardware performance counters are excellent when the host,
+kernel, permissions, hypervisor, and PMU virtualization all cooperate. That is
+not always the environment where performance work has to happen. Virtual
+machines, containers, CI workers, and locked-down systems frequently expose
+incomplete counters or no usable counters at all.
+
+Callgrind remains valuable in those environments because Valgrind collects a
+portable, detailed software-instrumented profile without depending on access
+to the host PMU. It is slow, but it can provide instruction costs, simulated
+cache behavior, branch behavior, call relationships, and source attribution
+where hardware-assisted profiling is unavailable or unreliable.
+
+The format has outlived much of the tooling around it. KCachegrind is an aging
+Qt desktop application with a cumbersome interaction model, especially for
+remote, terminal-first, automated, or browser-based workflows. The goal here
+is a trustworthy reusable parser plus modern ways to inspect the same data.
+
+## What this is not
+
+This project does **not** reimplement Valgrind or Callgrind's instrumentation.
+It does not execute programs under dynamic binary instrumentation, simulate a
+processor, or collect profiles. Valgrind remains the reference producer of the
+data.
+
+It is also not an argument that Callgrind should replace `perf` on a machine
+with good PMU access. Hardware counters and sampling profilers answer important
+questions with dramatically less overhead. This project is for consuming the
+Callgrind format well when Callgrind is the right producer.
 
 ## Workspace
 
-- `callgrind-parser`: shared parser library
-- `callgrind-annotate`: Rust port of the reference annotator
-- `callgrind2pprof`: pprof converter
-- `textgrind`: terminal profile explorer
-- `webgrind`: parser-backed web profile explorer
+| Package | Purpose |
+| --- | --- |
+| `callgrind-parser` | The primary library: parse Callgrind files into a shared data model and expose analysis primitives. |
+| `callgrind-annotate` | A compatible, scriptable Rust alternative to `callgrind_annotate`. |
+| `callgrind2pprof` | Convert Callgrind data for use with pprof-compatible tools. |
+| `textgrind` | Explore profiles interactively in a terminal. |
+| `webgrind` | Explore profiles through a parser-backed web application. |
 
-The applications are placeholders, while the parser includes a minimal header
-parser and test. Run the fast test loop with:
+## Development
+
+The repository uses Cargo for Rust code and Nix for the complete development
+environment, including Rust, `cargo-nextest`, SQLite, and Valgrind.
 
 ```console
+# Enter the pinned environment.
+./scripts/nix.sh develop
+
+# Run the fast Rust test suite.
 ./scripts/nix.sh develop -c cargo nextest run --workspace
-```
 
-Build and test the workspace hermetically with:
-
-```console
-./scripts/nix.sh build .#rustWorkspace -L
-```
-
-Run every Rust and integration check with:
-
-```console
+# Run every hermetic Rust and Callgrind integration check.
 ./scripts/nix.sh flake check -L
 ```
 
-## SQLite + Callgrind reference matrix
+The integration smoke test builds a deterministic SQLite fixture, runs a
+representative workload through a matrix of Callgrind options, and validates
+the resulting profiles with Valgrind's `callgrind_annotate`. See
+[SMOKE-TEST.md](SMOKE-TEST.md) for the matrix and manual commands.
 
-Build only the reference integration fixture with:
-
-```console
-./scripts/nix.sh build .#smoke -L
-```
-
-That build succeeds only after it creates and validates 12 raw Callgrind files
-and 12 reports from the reference `callgrind_annotate`. The result is available
-through the `result` symlink, including `SUMMARY.tsv` and the exact command for
-every run.
-
-## What gets exercised
-
-The fixture contains 5,000 customers and 50,000 purchases with deterministic
-data and useful indexes. The read-only workload combines point probes, an
-indexed join and range scan, covering-index aggregation, a window query, and
-two broad scans.
-
-Every Callgrind configuration runs with both a 64-page and 4,096-page SQLite
-page cache. The Callgrind matrix is:
-
-| Configuration | Simulation and collection |
-| --- | --- |
-| `ir-only` | Instruction reads only |
-| `branches-and-jumps` | Branch prediction and jump relationships |
-| `balanced-cache` | 32 KiB L1I/L1D and 8 MiB LL |
-| `constrained-cache` | 16 KiB L1I/L1D and 512 KiB LL |
-| `roomy-cache` | 64 KiB L1I/L1D and 16 MiB LL |
-| `full-simulation` | Balanced caches, branches, jumps, syscall time, write-back, hardware prefetch, and cache-use metrics |
-
-All simulated cache geometries are explicit. Callgrind's host autodetection is
-intentionally avoided so GitHub Actions and other Linux VMs test the same
-configuration.
-
-## Development shell
-
-```console
-./scripts/nix.sh develop
-cargo --version
-sqlite3 --version
-valgrind --version
-```
-
-To generate results into a normal writable directory while experimenting:
-
-```console
-fixture="$(./scripts/nix.sh build .#fixture --no-link --print-out-paths)"
-./scripts/nix.sh develop -c ./scripts/run-matrix.sh \
-  --fixture "$fixture" \
-  --workload ./workload/workload.sql.in \
-  --out ./results
-```
-
-## ChatGPT/Codex cloud environment
-
-Set the environment setup command to:
-
-```console
-bash .codex/setup.sh
-```
-
-The script installs Nix in container-compatible, root-only mode when needed
-and realizes the locked development environment while setup-phase network
-access is available. Subsequent work can run
-`./scripts/nix.sh build .#smoke -L` without
-depending on whatever SQLite or Valgrind happens to be installed globally.
-
-## Reproducibility boundary
-
-`flake.lock` fixes the complete Nix package graph. The SQL data and profiling
-options are deterministic, and the simulated cache geometries are explicit.
-Raw event totals are deliberately not checked against golden numbers: the
-same generic x86_64 user-space closure can still select different optimized
-code paths on different CPUs. For a `callgrind_annotate` reimplementation,
-compare the reference and replacement against the exact same raw profile.
+Contributors and coding agents should read [AGENTS.md](AGENTS.md) before making
+changes. Evolving plans, papercuts, decisions, and open questions live in
+[NOTES.md](NOTES.md).
