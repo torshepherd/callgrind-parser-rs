@@ -1,0 +1,10 @@
+[package]
+name = "webgrind"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Web UI and parser-backed service for Callgrind profiles"
+
+[dependencies]
+callgrind-parser.workspace = true
