@@ -29,6 +29,9 @@ matrix complement, but do not replace, minimal grammar fixtures.
 - `nix flake check -L` is the eventual GitHub Actions contract.
 - The parser is shared infrastructure. Frontends must consume it rather than
   parse the text format themselves.
+- The first conformance harness targets an owned normalized model so tests can
+  state semantic expectations. This does not yet settle whether a streaming
+  parser should also exist beneath or alongside that model.
 - Differential tests compare two consumers of the same generated profile.
   Cross-machine raw cost totals are not golden values.
 - SQLite is the first realistic profiled workload. More third-party workloads
@@ -37,6 +40,19 @@ matrix complement, but do not replace, minimal grammar fixtures.
 ## Test plan
 
 ### Parser unit fixtures
+
+Current harness status: three active scaffold/builder tests and 19 ignored
+conformance tests. The default suite stays green. Run all deferred contracts
+with:
+
+```console
+./scripts/nix.sh develop -c cargo nextest run \
+  -p callgrind-parser --run-ignored ignored-only
+```
+
+Future agents should normally select one ignored test or a tightly coupled
+group, remove those `ignore` attributes, and implement until the selected
+slice and the default suite pass.
 
 Use small inline strings when a test targets one rule. Build a test-only
 profile generator once combinations of positions, events, and associations
@@ -159,6 +175,9 @@ run the fast suite, and periodically prove the whole Nix check.
   output depending on the last `nix build` command.
 - The setup script assumes a disposable/root-capable Linux environment when it
   needs to install Nix. Non-root local machines should install Nix normally.
+- Cloud environments need to run `.codex/setup.sh` during their network-enabled
+  setup phase. Starting the installer later in a restricted agent phase may be
+  rejected even though the script itself is correct.
 - Host CPU dispatch can change optimized library code paths even with a pinned
   x86_64 userspace closure. This is why the matrix validates structure instead
   of absolute event totals.
@@ -177,3 +196,6 @@ run the fast suite, and periodically prove the whole Nix check.
   annotation smoke matrix.
 - Proved rustfmt, Clippy, nextest, the Nix workspace build, and the complete
   flake check.
+- Added a test-only profile builder, an initial normalized parser model and
+  error taxonomy, and 19 ignored grammar contracts spanning valid profiles,
+  compression, associations, multi-part input, and malformed input.

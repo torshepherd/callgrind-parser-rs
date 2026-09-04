@@ -11,8 +11,8 @@ and subtly incompatible reader.
 
 > [!NOTE]
 > The project is at the scaffolding stage. The workspace and its reproducible
-> test environment work, but the parser and applications are not implemented
-> beyond small compiling stubs.
+> test environment work, and parser conformance contracts are being assembled,
+> but the parser and applications are not implemented beyond small stubs.
 
 ## Why this exists
 

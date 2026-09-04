@@ -28,6 +28,7 @@ tests. Do not install ad-hoc system copies of Rust, SQLite, or Valgrind.
 Run from the repository root:
 
 - Fast tests: `./scripts/nix.sh develop -c cargo nextest run --workspace`
+- Deferred parser contracts: `./scripts/nix.sh develop -c cargo nextest run -p callgrind-parser --run-ignored ignored-only`
 - Cargo fallback: `./scripts/nix.sh develop -c cargo test --workspace`
 - Formatting: `./scripts/nix.sh develop -c cargo fmt --all --check`
 - Lints: `./scripts/nix.sh develop -c cargo clippy --workspace --all-targets --all-features -- -D warnings`
@@ -62,6 +63,8 @@ integration.
 
 ## Current state
 
-All five workspace members compile, but they are scaffolding. The parser has
-only a minimal header-reading function and one unit test. Read `NOTES.md`
-before choosing the next implementation slice.
+All five workspace members compile, but they are scaffolding. The parser has a
+minimal header reader, a test-fixture builder, and ignored conformance tests
+that define successive implementation slices. Read `NOTES.md`, select one
+ignored test or tightly related group, and make that slice pass without
+weakening its assertions.
