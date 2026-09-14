@@ -8,3 +8,4 @@ description = "Rust reimplementation of callgrind_annotate"
 
 [dependencies]
 callgrind-parser.workspace = true
+clap.workspace = true

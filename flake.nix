@@ -12,32 +12,23 @@
         src = ./.;
         filter = path: type:
           let name = baseNameOf path;
-          in !(builtins.elem name [ "result" "results" "target" ]);
+          in pkgs.lib.cleanSourceFilter path type
+            && !(builtins.elem name [ ".dev" "result" "results" "target" ]);
       };
 
-      rustWorkspace = pkgs.runCommand "callgrind-tools-workspace-0.0.0" {
-        nativeBuildInputs = with pkgs; [
-          cargo
-          cargo-nextest
-          rustc
-          stdenv.cc
-        ];
-      } ''
-        cp -R ${projectSource} source
-        chmod -R u+w source
-        cd source
-
-        export CARGO_HOME="$TMPDIR/cargo-home"
-        export CARGO_TARGET_DIR="$TMPDIR/target"
-
-        cargo nextest run --workspace --offline
-        cargo build --workspace --release --offline
-
-        mkdir -p "$out/bin"
-        for binary in callgrind-annotate callgrind2pprof textgrind webgrind; do
-          install -Dm755 "$CARGO_TARGET_DIR/release/$binary" "$out/bin/$binary"
-        done
-      '';
+      rustWorkspace = pkgs.rustPlatform.buildRustPackage {
+        pname = "callgrind-tools-workspace";
+        version = "0.0.0";
+        src = projectSource;
+        # Fetch dependencies by Cargo.lock checksums before the offline build.
+        cargoLock.lockFile = ./Cargo.lock;
+        cargoBuildFlags = [ "--workspace" ];
+        cargoTestFlags = [ "--workspace" ];
+        useNextest = true;
+        postCheck = ''
+          cargo test --workspace --doc --locked --offline
+        '';
+      };
 
       fixture = pkgs.runCommand "sqlite-callgrind-fixture.db" {
         nativeBuildInputs = [ pkgs.sqlite ];

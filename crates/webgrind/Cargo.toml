@@ -8,3 +8,4 @@ description = "Web UI and parser-backed service for Callgrind profiles"
 
 [dependencies]
 callgrind-parser.workspace = true
+clap.workspace = true

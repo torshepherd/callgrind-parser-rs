@@ -12,33 +12,51 @@ On a fresh ChatGPT/Codex Linux environment, run:
 bash .codex/setup.sh
 ```
 
-For an interactive development shell, run:
+This installs pinned Rust, rustfmt, Clippy, and nextest into `.dev/`, then runs
+`cargo fetch --locked`. No root, Nix, Docker, system users, or services are
+required. Initial downloads still require permitted network access. Stop and
+report permission failures; do not claim tests passed without running them.
+
+Use the wrapper in separate tool shells, or activate plain Cargo in Bash:
 
 ```console
-./scripts/nix.sh develop
+./scripts/cargo.sh test --workspace --locked --offline
+# Alternatively, in each fresh Bash shell:
+source scripts/dev-env.sh
+cargo test --workspace --locked --offline
 ```
 
-Use `scripts/nix.sh` instead of relying on a globally installed `nix`; the
-wrapper also handles root-run container environments correctly. Nix owns the
-Rust toolchain and native tools. Cargo owns Rust package dependencies and Rust
-tests. Do not install ad-hoc system copies of Rust, SQLite, or Valgrind.
+Do not assume the VM, tool installation, or checkout survives a conversation.
+Resolve the remote default branch before editing. Read/retrieve the repository
+through the authorized GitHub connection if shell Git authentication is absent;
+do not extract connector credentials. Preserve remote history and concurrent
+changes. Never force-push. Commit source, lockfiles, and handoff notes to Git.
+
+Nix is optional for daily Rust work and owns the separate pinned SQLite/
+Valgrind integration environment. `.codex/setup.sh` no longer installs Nix.
+Use an existing Nix installation or a suitably configured CI runner for it.
 
 ## Required commands
 
 Run from the repository root:
 
-- Fast tests: `./scripts/nix.sh develop -c cargo nextest run --workspace`
-- Deferred parser contracts: `./scripts/nix.sh develop -c cargo nextest run -p callgrind-parser --run-ignored ignored-only`
-- Cargo fallback: `./scripts/nix.sh develop -c cargo test --workspace`
-- Formatting: `./scripts/nix.sh develop -c cargo fmt --all --check`
-- Lints: `./scripts/nix.sh develop -c cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- Fast tests: `./scripts/cargo.sh nextest run --workspace --locked --offline`
+- Deferred parser contracts: `./scripts/cargo.sh nextest run -p callgrind-parser --locked --offline --run-ignored ignored-only`
+- Cargo tests (also covers doctests): `./scripts/cargo.sh test --workspace --locked --offline`
+- Formatting: `./scripts/cargo.sh fmt --all --check`
+- Lints: `./scripts/cargo.sh clippy --workspace --all-targets --all-features --locked --offline -- -D warnings`
 - Callgrind integration matrix: `./scripts/nix.sh build .#smoke -L`
 - Complete hermetic check: `./scripts/nix.sh flake check -L`
 
-Before handing off a code change, formatting, Clippy, nextest, and the relevant
-integration checks must pass. Use the complete flake check when the change can
-affect parsing, generated fixtures, Nix, Valgrind behavior, or repository-wide
-integration.
+Before handing off a code change, run formatting, Clippy, nextest, and Cargo
+tests. Run relevant integration checks when changing their behavior. If Nix or
+native tools are unavailable, report that separately; this must not prevent
+running the Rust suite. A green Cargo suite is not a full integration pass.
+
+When changing dependencies, update and commit `Cargo.lock` with Cargo, then run
+setup again to prefetch. Keep versions in `[workspace.dependencies]`, enabled
+only in consumers that need them. Nextest is a development executable, not a
+crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 
 ## Invariants
 
@@ -56,7 +74,7 @@ integration.
 - The integration matrix must continue to validate 12 raw Callgrind profiles
   and 12 reference annotations unless an intentional test-design change is
   documented in `NOTES.md`.
-- Do not commit `target/`, `result`, `results/`, generated Callgrind profiles,
+- Do not commit `.dev/`, `target/`, `result`, `results/`, generated Callgrind profiles,
   or other local build output.
 - Update `NOTES.md` when a decision is made, a new papercut is discovered, or
   an unresolved design question materially changes.

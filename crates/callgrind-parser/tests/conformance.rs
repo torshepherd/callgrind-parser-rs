@@ -97,7 +97,10 @@ fn parses_profile_and_part_metadata() {
     assert_eq!(part.metadata.pid, Some(42));
     assert_eq!(part.metadata.thread, Some(7));
     assert_eq!(part.metadata.part, Some(3));
-    assert_eq!(part.metadata.command.as_deref(), Some("./demo --flag value"));
+    assert_eq!(
+        part.metadata.command.as_deref(),
+        Some("./demo --flag value")
+    );
     assert_eq!(
         part.metadata.descriptions,
         vec![
@@ -206,7 +209,10 @@ fn resolves_relative_subpositions_per_column() {
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(part.positions, vec![PositionKind::Instruction, PositionKind::Line]);
+    assert_eq!(
+        part.positions,
+        vec![PositionKind::Instruction, PositionKind::Line]
+    );
     assert_eq!(
         positions,
         vec![
@@ -342,7 +348,11 @@ fn parses_multiple_parts() {
 #[test]
 #[ignore = "not implemented: required events validation"]
 fn rejects_a_part_without_events() {
-    assert_error("# callgrind format\nfl=main.c\nfn=main\n1 1\n", ParseErrorKind::MissingEvents, 2);
+    assert_error(
+        "# callgrind format\nfl=main.c\nfn=main\n1 1\n",
+        ParseErrorKind::MissingEvents,
+        2,
+    );
 }
 
 #[test]

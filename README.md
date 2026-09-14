@@ -57,20 +57,32 @@ Callgrind format well when Callgrind is the right producer.
 
 ## Development
 
-The repository uses Cargo for Rust code and Nix for the complete development
-environment, including Rust, `cargo-nextest`, SQLite, and Valgrind.
+Everyday development needs Rust and Cargo, not Nix, Docker, Valgrind, or SQLite.
+For a fresh x86_64 Linux ChatGPT Work session, after obtaining this repository:
 
 ```console
-# Enter the pinned environment.
-./scripts/nix.sh develop
+# Install the pinned Rust toolchain and nextest; fetch locked dependencies.
+bash .codex/setup.sh
 
-# Run the fast Rust test suite.
-./scripts/nix.sh develop -c cargo nextest run --workspace
+# The wrapper works across fresh shells without changing shell startup files.
+./scripts/cargo.sh nextest run --workspace --locked --offline
+./scripts/cargo.sh test --workspace --locked --offline
 
-# Run every hermetic Rust and Callgrind integration check.
-./scripts/nix.sh flake check -L
+# Or use ordinary Cargo after activating the environment in your current Bash.
+source scripts/dev-env.sh
+cargo test --workspace --locked --offline
 ```
 
+Setup installs only into the ignored `.dev/` directory, requires no root,
+and can be rerun after the VM or caches disappear. Initial setup needs network
+access plus Bash, curl, tar, sha256sum, and a working C linker (`cc`). It does
+not automatically run merely because a chat opens; the agent runs it after
+reading `AGENTS.md`. Git is the durable source of truth, not `.dev/` or `target/`.
+Other platforms can use their own rustup installation with `rust-toolchain.toml`.
+
+Nix remains an **optional, separate integration environment**. With Nix
+installed, run `./scripts/nix.sh build .#smoke -L` for the profiling matrix or
+`./scripts/nix.sh flake check -L` for the Nix Rust build plus that matrix.
 The integration smoke test builds a deterministic SQLite fixture, runs a
 representative workload through a matrix of Callgrind options, and validates
 the resulting profiles with Valgrind's `callgrind_annotate`. See

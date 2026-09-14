@@ -22,10 +22,11 @@ matrix complement, but do not replace, minimal grammar fixtures.
   Callgrind-format data.
 - This is not a Valgrind or Callgrind instrumentation reimplementation.
 - Cargo owns the Rust workspace, dependencies, and unit tests.
-- `cargo-nextest` is the preferred test runner; ordinary `cargo test` remains a
-  supported fallback.
-- Nix owns the Rust toolchain, native dependencies, development shell, and
-  hermetic integration tests.
+- `cargo-nextest` is installed by the development bootstrap and is the preferred
+  runner; ordinary `cargo test` remains supported and also runs doctests.
+- Easy setup in fresh ChatGPT Work Linux sessions is the requirement, not Nix.
+  A repository-local rustup toolchain owns daily Rust development. Nix is an
+  optional separate environment for native dependencies and integration tests.
 - `nix flake check -L` is the eventual GitHub Actions contract.
 - The parser is shared infrastructure. Frontends must consume it rather than
   parse the text format themselves.
@@ -41,13 +42,13 @@ matrix complement, but do not replace, minimal grammar fixtures.
 
 ### Parser unit fixtures
 
-Current harness status: three active scaffold/builder tests and 19 ignored
-conformance tests. The default suite stays green. Run all deferred contracts
+Current harness status: three active parser scaffold/builder tests, three
+frontend dependency smoke tests, and 19 ignored conformance tests. Run deferred contracts
 with:
 
 ```console
-./scripts/nix.sh develop -c cargo nextest run \
-  -p callgrind-parser --run-ignored ignored-only
+./scripts/cargo.sh nextest run -p callgrind-parser \
+  --locked --offline --run-ignored ignored-only
 ```
 
 Future agents should normally select one ignored test or a tightly coupled
@@ -173,11 +174,27 @@ run the fast suite, and periodically prove the whole Nix check.
   edits invalidate its source hash and rerun the small Rust build.
 - `result` can point to either the workspace build or the Callgrind smoke
   output depending on the last `nix build` command.
-- The setup script assumes a disposable/root-capable Linux environment when it
-  needs to install Nix. Non-root local machines should install Nix normally.
-- Cloud environments need to run `.codex/setup.sh` during their network-enabled
-  setup phase. Starting the installer later in a restricted agent phase may be
-  rejected even though the script itself is correct.
+- The old Nix installer downloaded successfully on 2026-09-13, but failed with
+  EPERM while looking up `nixbld`. Do not diagnose every bootstrap failure as a
+  network problem. The replacement Rust bootstrap needs no system-user changes.
+- Archive extraction under root in this managed VM tried to restore a foreign
+  uid/gid and failed. Extract tool archives with `--no-same-owner` and
+  `--no-same-permissions`; do not request extra privileges for this.
+- The crates.io metadata API returned HTTP 403, while Cargo's standard sparse
+  registry and crate download path worked. Metadata lookup failure is not proof
+  that `cargo fetch` is blocked.
+- `rustup show active-toolchain` implicitly installed missing components but
+  warned this behavior is deprecated. Bootstrap explicitly installs missing
+  toolchain components instead.
+- `.codex/setup.sh` is an ordinary script, not an automatic hook for every Work
+  chat. Future agents must obtain the repository, read `AGENTS.md`, and run it.
+  Fresh installations need network access; warmed Rust checks run offline.
+- The scripted binary bootstrap currently supports only x86_64 Linux. Other
+  platforms should use their own rustup and the checked-in toolchain file.
+- The local source snapshot initially had an unborn Git branch with every file
+  staged, not a clone containing remote history. Its 26 files matched remote
+  `b67d697` exactly. Remote updates must use the real remote parent, never turn
+  that local snapshot into replacement history.
 - Host CPU dispatch can change optimized library code paths even with a pinned
   x86_64 userspace closure. This is why the matrix validates structure instead
   of absolute event totals.
@@ -199,3 +216,47 @@ run the fast suite, and periodically prove the whole Nix check.
 - Added a test-only profile builder, an initial normalized parser model and
   error taxonomy, and 19 ignored grammar contracts spanning valid profiles,
   compression, associations, multi-part input, and malformed input.
+
+### 2026-09-13: portable Rust development and initial dependencies
+
+- Replaced the Nix-only `.codex/setup.sh` with a repository-local bootstrap:
+  Rust 1.98.1 (minimal profile, rustfmt and Clippy), rustup 1.29.1, and nextest
+  0.9.144. Rustup and nextest download artifacts have checked-in SHA-256 hashes.
+  The Rust toolchain is pinned in `rust-toolchain.toml`; rustup verifies its
+  component downloads. `.dev/` holds tools/caches and is excluded from Git and
+  the Nix source. No shell startup files, system users, or services are changed.
+- Added `scripts/cargo.sh` for independent agent shells and
+  `source scripts/dev-env.sh` for ordinary Cargo. Initial setup prefetches
+  `Cargo.lock`; subsequent tests can use `--locked --offline`.
+- Declared Prost (0.14 series) and flate2 (1.1, pure-Rust backend) in
+  `callgrind2pprof`, Ratatui (0.30.2) and Crossterm (0.29) in `textgrind`, and
+  Clap (4.x, derive) in the four application crates. Cargo.lock pins the full
+  112-package external graph. Workspace MSRV is now 1.88 to accommodate the
+  TUI dependencies; the development toolchain is pinned separately.
+- The parser remains dependency-free. No `prost-build`/`protoc` requirement was
+  added: decide schema generation when implementing pprof, keeping ordinary
+  builds free of protobuf compiler installation. The gzip test is not a pprof
+  conversion test. The web framework and async runtime are still undecided.
+- Added isolated dependency smoke tests for Clap derives, protobuf/gzip, and
+  Ratatui's in-memory TestBackend plus Crossterm event types. No TTY, external
+  processes, network, or native profiler is needed by these tests.
+- Replaced Nix's empty-cache `runCommand` Rust build with `buildRustPackage`
+  using `cargoLock.lockFile`, workspace build/test flags, and nextest. This
+  declares crate downloads before the offline build instead of relying on an
+  ambient Cargo cache. The SQLite fixture and all 12 matrix cases are unchanged.
+- Verified from a clean source copy with an empty tool directory and Cargo
+  cache: bootstrap downloaded and installed its tools and locked dependencies;
+  rustfmt, Cargo tests, nextest, Clippy with warnings denied, and a release
+  workspace build passed. All build/test commands after setup used
+  `--locked --offline`. Cargo and nextest each passed 6 active tests, with 19
+  deliberately ignored parser contracts. Warm bootstrap also passed with
+  Cargo offline and from outside the checkout directory.
+- Formatted the previously unchecked conformance tests without changing their
+  assertions. Nix and the native profiling matrix have not been rerun in this
+  VM; their prior success does not validate the new Nix Rust derivation.
+
+References: [rustup installation](https://rust-lang.github.io/rustup/installation/index.html),
+[nextest binaries](https://nexte.st/docs/installation/pre-built-binaries/),
+[Prost](https://docs.rs/prost/latest/prost/),
+[Ratatui](https://docs.rs/ratatui/latest/ratatui/), and
+[Nix Cargo.lock vendoring](https://nixos.org/manual/nixpkgs/stable/#importing-a-cargo.lock-file).

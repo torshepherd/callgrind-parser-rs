@@ -8,3 +8,6 @@ description = "Convert Callgrind profiles to pprof"
 
 [dependencies]
 callgrind-parser.workspace = true
+clap.workspace = true
+flate2.workspace = true
+prost.workspace = true

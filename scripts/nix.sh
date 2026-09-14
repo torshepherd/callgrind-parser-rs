@@ -6,7 +6,7 @@ if command -v nix >/dev/null 2>&1; then
 elif [[ -x /nix/var/nix/profiles/default/bin/nix ]]; then
   nix_bin="/nix/var/nix/profiles/default/bin/nix"
 else
-  echo "Nix is not installed; run bash .codex/setup.sh or install Nix normally" >&2
+  echo "Nix is optional and not installed. Use scripts/cargo.sh for Rust development; install Nix separately for the integration matrix." >&2
   exit 127
 fi
 
