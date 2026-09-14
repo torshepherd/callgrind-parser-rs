@@ -1,7 +1,10 @@
 # Next work
 
-Start a fresh session with [docs/HANDOFF.md](docs/HANDOFF.md). The old workspace
-is gone; its uncommitted harness needs reconstruction, not just a final commit.
+Start a fresh session with [docs/HANDOFF.md](docs/HANDOFF.md). The harness has
+been reconstructed and the plain-text annotator implemented. Native/Rust gates
+pass; the Nix closure remains unverified.
+
+- [ ] Run the updated `smoke` build and `flake check` on a Nix-capable host.
 
 - [x] **Callgrind/KCachegrind source audit.** See
   [docs/SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md) for pinned sources, producer/reader
@@ -17,10 +20,14 @@ is gone; its uncommitted harness needs reconstruction, not just a final commit.
   and final gates. See [the handoff](docs/HANDOFF.md) for reconstruction and
   [the checkpoint](docs/SQLITE-COMPARISON-CHECKPOINT.md) for historical evidence.
   Native source-pinned runs are not a rerun of the Nix closure.
-- [ ] Define annotation compatibility and differential checks on identical
+- [x] Implement the plain-text annotator and define compatibility/differential checks on identical
   single-part input files before implementing the annotate frontend. Start
   with semantic tables; explicitly cover zero-count calls, recursive inclusive
   costs, summary fallback, inline grouping, object identity and ranking ties.
+  See `crates/callgrind-annotate/README.md`; 87 native same-file comparisons pass.
+- [ ] Extend annotation coverage if needed: full source-output differential
+  goldens, derived events, optional cycle-aware views and multi-part aggregation.
+  Do not conflate these extensions with the implemented single-part port.
 - [ ] Define the pprof conversion policy for aggregate call graphs: preserve
   exclusive counts without double-counting inclusive edges, document any stack
   approximation, check signed protobuf ranges, and validate with an independent

@@ -86,3 +86,29 @@ matrix validator plus Python tests. Its pinned install hook was inspected,
 but **Nix is unavailable here, so the Nix build/check is unverified**. Run
 `./scripts/nix.sh build .#smoke -L` and `./scripts/nix.sh flake check -L` on a
 Nix-capable host. Native reference success is not a hermetic Nix pass.
+
+## Rust annotator differential checks
+
+```bash
+./scripts/cargo.sh build -p callgrind-annotate --locked --offline
+python3 tests/reference/check_annotate.py \
+  --rust target/debug/callgrind-annotate \
+  --reference /path/to/valgrind/bin/callgrind_annotate \
+  --matrix "$matrix_dir"
+```
+
+Observed: **87 comparisons passed, 35,080 nonzero function rows**, including
+all 12 SQLite profiles, default/self/inclusive modes, show/sort/threshold
+options and direct call trees. The Python suite now has 21 passing tests;
+the complete Rust suite has 136. Nix smoke includes this gate too (unverified).
+
+This compares semantic text tables, not byte-identical output. Rust uses the
+explicit `--grouping=source` view to match inline attribution. Object decoration
+is excluded because Perl omits it for some rows; duplicate nonzero file:function
+labels fail. Whitespace, percentages, dot-as-zero and all-zero function rows
+are normalized. Tree ties are compared as a multiset. Runs use the profile's
+directory as cwd to avoid Perl stripping a source prefix from only some tags.
+The raw libcore suite independently checks full object/defining-file identity.
+Source output and deliberate deviations are covered by focused Rust tests;
+full source-output byte parity is not claimed. The annotator guide documents
+the precise policy boundaries and machine-report schema.

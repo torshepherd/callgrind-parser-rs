@@ -97,11 +97,18 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 ## Current state
 
 The parser has an incremental decoder, an owned interned model, and active
-conformance, property, and streaming tests. Frontend binaries remain stubs.
+conformance, property, and streaming tests. `callgrind-annotate` implements
+plain-text reports, call trees and source annotation; other frontends are stubs.
+Read `crates/callgrind-annotate/README.md` before changing its policies.
+Keep rendering barebones like the original: aligned text, no colors or TUI.
 Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
 limits, and validation evidence. The Callgrind/KCachegrind source audit is in
 `docs/SOURCE-AUDIT.md`; the 12-profile parsing gate and shared analysis are next.
-Do not claim complete format/frontend conformance from passing unit tests.
+The durable same-file harness is in `tests/reference/README.md`. Do not claim
+complete format/frontend conformance from passing unit tests. Annotator
+comparisons explicitly use source grouping, normalize display-only differences,
+and do not establish exact byte/source-output parity. Default function grouping
+preserves defining-file identity; never silently substitute a reference quirk.
 
 For externally generated files, run
 `./scripts/cargo.sh run -p callgrind-parser --example inspect --locked --offline -- PROFILE`.

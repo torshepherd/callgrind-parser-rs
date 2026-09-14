@@ -11,8 +11,21 @@ and subtly incompatible reader.
 
 > [!NOTE]
 > The parser foundation is implemented with incremental decoding, an owned
-> interned model, and active grammar/property tests. The applications remain
-> stubs. Full producer compatibility and analysis semantics are still in progress.
+> interned model, and active grammar/property tests. `callgrind-annotate` now
+> provides plain-text reports, call trees and source annotation. The other
+> applications remain stubs; full dialect support is not claimed.
+
+## Annotate a profile
+
+```console
+./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- --auto=no profile.callgrind
+./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- --inclusive=yes --tree=both profile.callgrind
+```
+
+See the [annotator guide](crates/callgrind-annotate/README.md) for options and
+compatibility boundaries. Output is deliberately plain aligned text. The
+default keeps inline-attributed costs with their defining function;
+`--grouping=source` selects the traditional Perl-style split.
 
 ## Why this exists
 

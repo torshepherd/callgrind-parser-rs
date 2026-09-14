@@ -6,6 +6,43 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: plain-text annotator implemented and validated
+
+- Harness milestone is on remote `master`: `21df9e979464b07785f95553210eb1ad939a7510`.
+- Implemented `callgrind-annotate` over the existing production parser, with
+  checked u128 aggregates, self/inclusive reports, event show/sort, thresholds,
+  percentages, caller/callee trees, source context/search and exact TSV output.
+  User clarified rendering should be barebones like upstream: plain aligned
+  text, no visual UI. Other frontend crates remain stubs.
+- Default grouping retains full defining-file function identity. Added explicit
+  `--grouping=source` for the upstream inline attribution split, without changing
+  the raw parser. Multipart inputs require `--part INDEX`; no accidental merge.
+  Derived-event formula evaluation remains outside this first port.
+- Inclusive display follows incoming-edge sums (including recursion), falling
+  back to self plus outgoing edges. Zero-count calls are never self costs;
+  declaration-free program totals always use self sums. Full policies and
+  intentional deviations are in `crates/callgrind-annotate/README.md`.
+- Same-file differential: 87 invocations passed across two minimal fixtures
+  and all 12 SQLite profiles, comparing 35,080 nonzero function rows plus
+  program totals and call trees. Covers default/self/inclusive, full tables,
+  event selection, thresholds and tree=both. Python comparisons use source
+  grouping and normalize percent/whitespace/dot-zero/object decorations;
+  full object identity is covered by the independent raw libcore harness.
+- Papercut: Perl strips cwd from fl/fi/fe but not explicit callee filenames,
+  creating inconsistent identities if run from a source prefix. Differential
+  runs now execute from profile directories outside the source tree, with
+  absolute profile paths. Perl also omits object decorations for inline rows;
+  these display labels are excluded from scoped annotation parity.
+- Full gates: formatting, Clippy, nextest and Cargo tests pass, 136 tests total
+  (38 new tests). Python suite passes 21 tests. All eight reference fixtures
+  and all 12 parser/libcore comparisons remain green (186,876 rows).
+- Nix smoke invokes the Rust annotator comparison too, with explicit parser
+  fixture paths and declared Python/native tools. Nix is absent, so build and
+  flake checks are still unverified; do not present native results as Nix results.
+- Another papercut: Cargo replayed an old Clippy diagnostic despite success
+  after an edit; touching the changed example forced a clean successful
+  recheck. No diagnostic suppression or dependency changes were used.
+
 ### 2026-09-15: harness reconstructed, annotate implementation authorized
 
 - Recovered remote `master` at `11d2be8983984fe08227840c4571100813ad6f9e`
@@ -37,11 +74,11 @@ New sessions should start with [docs/HANDOFF.md](docs/HANDOFF.md). It records
 the committed baseline, observed native results, missing harness code and a
 self-contained reconstruction plan after the workspace reset.
 
-The parser foundation is implemented with active tests. Frontend and analysis
-work remains ahead. `TODO.md` is the ordered checklist. The completed
+The parser foundation and plain-text annotator are implemented with active
+tests. Other frontends and shared analysis remain ahead. `TODO.md` is the ordered checklist. The completed
 [source audit](docs/SOURCE-AUDIT.md) supports the current model and defines the
 analysis/compatibility work. Native SQLite parsing/reference comparisons have
-passed experimentally; committing the reproducible harness and gates is next.
+passed; the harness is committed. Validate the Nix wiring on a suitable host next.
 
 The primary reference is the
 [Callgrind Format Specification](https://valgrind.org/docs/manual/cl-format.html),

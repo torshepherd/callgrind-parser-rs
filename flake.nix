@@ -65,6 +65,11 @@
         python3 -m unittest discover -s ${./tests/reference} -v
         python3 ${./tests/reference}/check_matrix.py "$out" \
           --inspect ${rustWorkspace}/libexec/inspect
+        python3 ${./tests/reference}/check_annotate.py \
+          --rust ${rustWorkspace}/bin/callgrind-annotate \
+          --reference ${pkgs.valgrind}/bin/callgrind_annotate \
+          --parser-fixtures ${./crates/callgrind-parser/tests/fixtures} \
+          --matrix "$out"
       '';
     in
     {

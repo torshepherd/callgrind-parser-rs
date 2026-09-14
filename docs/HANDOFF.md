@@ -1,5 +1,32 @@
 # New-session handoff: Callgrind parser and SQLite comparisons
 
+## Current state: annotator implemented, 2026-09-15
+
+The harness was pushed as `21df9e9`; the subsequent annotator implementation
+supersedes the original stub/missing-code status below. Read the current
+[annotator guide](../crates/callgrind-annotate/README.md) and
+[reference commands](../tests/reference/README.md).
+
+- Implemented plain-text costs/ranking, self/inclusive modes, thresholds,
+  event selection/sorting, percentages, caller/callee trees, source annotation,
+  explicit part selection and TSV output. No colors/TUI, per user preference.
+- Default full function identity; explicit source-grouped compatibility view.
+  Correct zero-count handling and self-only calculated totals intentionally
+  differ from Perl bugs. Other frontends remain stubs.
+- Formatting, Clippy, nextest and Cargo tests pass: **136 Rust tests**.
+  **21 Python tests**, eight reference fixtures, and **87 annotation comparisons**
+  pass. The latter compare 35,080 function rows plus totals/trees on identical
+  bytes across two minimal fixtures and the unchanged 12-case SQLite matrix.
+- Raw parser/KCachegrind agreement: 186,876 rows across all 12 profiles.
+- **Nix remains unverified.** The smoke wiring now runs the production parser
+  and annotator comparison, but Nix is absent here. Run the required Nix build
+  and flake checks next on a suitable host. No dependency/lockfile changes.
+
+Do not reconstruct the harness again. Continue from repository files, preserving
+remote history. Shell Git auth was unavailable: publication used the connected
+GitHub API with the real remote parent and a non-forced ref update. Local Git
+was only an inspection snapshot and must never replace remote history.
+
 ## Reconstruction completed 2026-09-15
 
 The durable harness is now implemented. Start with

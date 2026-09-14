@@ -1,0 +1,18 @@
+# callgrind format
+version: 1
+events: Ir
+fl=source.c
+fn=main
+0 1
+3 2
+cfn=work
+calls=2 8
+3 7
+4 3
+cfn=work
+calls=0 8
+4 5
+99 4
+fn=work
+8 5
+totals: 15
