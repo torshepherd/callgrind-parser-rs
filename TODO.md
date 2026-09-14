@@ -8,7 +8,10 @@ is gone; its uncommitted harness needs reconstruction, not just a final commit.
   disagreements, model decisions, native experiments and minimal regressions.
   KCachegrind was source-inspected in that audit; subsequent native runtime
   results are recorded in the checkpoint below.
-- [ ] **Finish and commit the SQLite/reference test harness.** All 12 native
+- [x] **Finish and commit the SQLite/reference test harness.** Reconstructed
+  and rerun 2026-09-15: 186,876 rows match; eight fixtures and 17 Python tests
+  pass. See `tests/reference/README.md`. Nix wiring is still unverified.
+  Historical checkpoint: all 12 native
   profiles passed parser/self-total checks and 186,924 aggregate rows matched
   KCachegrind, but the environment disappeared before implementation commits
   and final gates. See [the handoff](docs/HANDOFF.md) for reconstruction and
@@ -28,7 +31,7 @@ is gone; its uncommitted harness needs reconstruction, not just a final commit.
   provenance and raw edges; make KCachegrind's inclusive/cycle-cut conventions
   optional display policies. Add lazy source/instruction indexes and a separate
   source/binary resolver. Benchmark before replacing per-record cost storage.
-- [ ] Build a headless harness against the pinned KCachegrind libcore for
+- [x] Build a headless harness against the pinned KCachegrind libcore for
   runtime checks of combined-file compression scope, identities, inline
   attribution, ranges, event remapping and cycle costs.
 - [ ] Decide dialect scope from the audit: nested mangled compression,

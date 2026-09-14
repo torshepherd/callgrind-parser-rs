@@ -22,11 +22,15 @@
         src = projectSource;
         # Fetch dependencies by Cargo.lock checksums before the offline build.
         cargoLock.lockFile = ./Cargo.lock;
-        cargoBuildFlags = [ "--workspace" ];
+        cargoBuildFlags = [ "--workspace" "--bins" "--examples" ];
         cargoTestFlags = [ "--workspace" ];
         useNextest = true;
         postCheck = ''
           cargo test --workspace --doc --locked --offline
+        '';
+        postInstall = ''
+          mkdir -p "$out/libexec"
+          install -m755 "$tmpDir/examples/inspect" "$tmpDir/examples/reference_export" "$out/libexec/"
         '';
       };
 
@@ -47,6 +51,7 @@
           gnused
           sqlite
           valgrind
+          python3
         ];
       } ''
         export LC_ALL=C
@@ -57,9 +62,9 @@
           --workload ${./workload/workload.sql.in} \
           --out "$out"
 
-        test "$(find "$out" -name '*.callgrind' | wc -l)" -eq 12
-        test "$(find "$out" -name '*.annotated.txt' | wc -l)" -eq 12
-        test "$(($(wc -l < "$out/SUMMARY.tsv") - 1))" -eq 12
+        python3 -m unittest discover -s ${./tests/reference} -v
+        python3 ${./tests/reference}/check_matrix.py "$out" \
+          --inspect ${rustWorkspace}/libexec/inspect
       '';
     in
     {

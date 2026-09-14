@@ -1,0 +1,12 @@
+# callgrind format
+version: 1
+events: Ir
+ob=/one/lib.so
+fl=/one/main.c
+fn=work
+1 2
+ob=/two/lib.so
+fl=/two/main.c
+fn=work
+1 3
+totals: 5

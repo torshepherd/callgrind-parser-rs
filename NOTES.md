@@ -6,6 +6,33 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: harness reconstructed, annotate implementation authorized
+
+- Recovered remote `master` at `11d2be8983984fe08227840c4571100813ad6f9e`
+  through the GitHub connection. Shell Git authentication is unavailable.
+  Local Git is an inspection snapshot only; publish with the real remote
+  parent and a non-forced ref update, never push the snapshot root.
+- Reconstructed `reference_export`, strict comparator and negative tests,
+  matrix validation, pinned headless KCachegrind build/export, and all six
+  missing fixtures. Commands and scope: `tests/reference/README.md`.
+- Rebuilt pinned Valgrind/SQLite natively and ran the unchanged 12-case matrix.
+  All self totals match; KCachegrind comparison T=12, F=9,996, E=20,382,
+  L=156,486, total 186,876. All eight fixture expectations pass. Host totals
+  and row counts differ from the prior experiment and are not golden values.
+- 17 Python tests and all 98 Rust tests pass; formatting/Clippy pass.
+  Nix smoke now calls the production parser and Python validator; pinned
+  cargo-install-hook was inspected. Nix itself is absent: closure unverified.
+- Papercuts: an environment transition terminated processes and stripped
+  script execute bits; user explicitly authorized restoring them and setup.
+  `TraceData::load(QIODevice*, ...)` opens its own input: pre-opening QFile
+  caused a misleading load failure. Qt's transitive libb2 requires
+  LD_LIBRARY_PATH when using an extracted prefix despite executable RUNPATH.
+  The Perl full-simulation annotation warnings at line 1285 persist.
+- User explicitly requested implementing/pushing the annotator after handoff
+  work. Next: semantic compatibility on single-part inputs, deterministic
+  rankings, options, call trees and source annotation; preserve correct raw
+  zero-count/identity semantics, document reference exceptions.
+
 New sessions should start with [docs/HANDOFF.md](docs/HANDOFF.md). It records
 the committed baseline, observed native results, missing harness code and a
 self-contained reconstruction plan after the workspace reset.

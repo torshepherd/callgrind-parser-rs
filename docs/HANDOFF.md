@@ -1,5 +1,16 @@
 # New-session handoff: Callgrind parser and SQLite comparisons
 
+## Reconstruction completed 2026-09-15
+
+The durable harness is now implemented. Start with
+[tests/reference/README.md](../tests/reference/README.md) for commands and
+current results: 12 native profiles/annotations validated, 186,876 same-file
+aggregate rows matched, eight focused fixtures and 17 Python tests passed.
+The Rust gate remains 98 passing tests. Nix wiring exists but is unverified
+because Nix is unavailable. The user has authorized the annotate port next.
+The original reconstruction contract below remains useful historical context;
+its statements about missing implementations are superseded by this update.
+
 Updated 2026-09-14. Repository: `torshepherd/callgrind-parser-rs`.
 Default branch at handoff: **master**, not main. Resolve it again before editing.
 
