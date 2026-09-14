@@ -2,6 +2,10 @@
 
 2026-09-14. Baseline: `e928b4dccf6fba7f7c9cefcbb03f60950210e0c1`.
 
+Recovery update: the old workspace was subsequently confirmed absent. Start
+with [HANDOFF.md](HANDOFF.md) for a self-contained reconstruction plan. The
+paths below are historical recovery hints, not files available in Git.
+
 ## Status
 
 The **Rust callgrind-annotate application is still a stub**. These experiments
@@ -138,8 +142,8 @@ Pending implementation paths:
 
 Next actions:
 
-1. Recover those files, or reconstruct the adapters from this contract and the
-   conversation patches if the workspace is gone.
+1. Reconstruct the missing adapters using [HANDOFF.md](HANDOFF.md) and this
+   checkpoint. Do not require conversation patches or the old workspace.
 2. Rebuild and run the new edge fixtures. Assert expected differences narrowly:
    combined alias scope, basename identity collisions, unsupported ranges and
    cycle/inclusive display behavior. Do not label blanket failures as expected.

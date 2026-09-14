@@ -1,13 +1,18 @@
 # Next work
 
+Start a fresh session with [docs/HANDOFF.md](docs/HANDOFF.md). The old workspace
+is gone; its uncommitted harness needs reconstruction, not just a final commit.
+
 - [x] **Callgrind/KCachegrind source audit.** See
   [docs/SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md) for pinned sources, producer/reader
   disagreements, model decisions, native experiments and minimal regressions.
-  KCachegrind was inspected, not executed; runtime parity remains below.
+  KCachegrind was source-inspected in that audit; subsequent native runtime
+  results are recorded in the checkpoint below.
 - [ ] **Finish and commit the SQLite/reference test harness.** All 12 native
   profiles passed parser/self-total checks and 186,924 aggregate rows matched
   KCachegrind, but the environment disappeared before implementation commits
-  and final gates. See [the checkpoint](docs/SQLITE-COMPARISON-CHECKPOINT.md).
+  and final gates. See [the handoff](docs/HANDOFF.md) for reconstruction and
+  [the checkpoint](docs/SQLITE-COMPARISON-CHECKPOINT.md) for historical evidence.
   Native source-pinned runs are not a rerun of the Nix closure.
 - [ ] Define annotation compatibility and differential checks on identical
   single-part input files before implementing the annotate frontend. Start

@@ -6,10 +6,15 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+New sessions should start with [docs/HANDOFF.md](docs/HANDOFF.md). It records
+the committed baseline, observed native results, missing harness code and a
+self-contained reconstruction plan after the workspace reset.
+
 The parser foundation is implemented with active tests. Frontend and analysis
 work remains ahead. `TODO.md` is the ordered checklist. The completed
 [source audit](docs/SOURCE-AUDIT.md) supports the current model and defines the
-analysis/compatibility work; the 12-profile SQLite parsing gate is next.
+analysis/compatibility work. Native SQLite parsing/reference comparisons have
+passed experimentally; committing the reproducible harness and gates is next.
 
 The primary reference is the
 [Callgrind Format Specification](https://valgrind.org/docs/manual/cl-format.html),
@@ -315,6 +320,18 @@ run the fast suite, and periodically prove the whole Nix check.
   frontend stubs. Actual input validation uses the shared decoder.
 
 ## Work log
+
+### 2026-09-14: durable new-session handoff
+
+- Confirmed remote `master` at `42de558feec0064512ff3564a11b81fedf34eba3`.
+  The old workspace and uncommitted reference harness were no longer present.
+- Added [HANDOFF.md](docs/HANDOFF.md) with a fresh-session read order, verified
+  versus pending status, adapter reconstruction contract, fixture expectations,
+  native matrix commands and required completion gates. A new session must not
+  depend on old paths or conversation patches, or ask the user to reconnect a VM.
+- This is documentation only. No harness source was recovered or implemented,
+  no new tests were run, and the Rust annotator remains a stub. The earlier
+  checkpoint preserves historical evidence, not reproducibility from Git.
 
 ### 2026-09-14: SQLite/KCachegrind native checks, environment interruption
 
