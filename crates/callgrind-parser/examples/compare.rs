@@ -27,6 +27,7 @@ fn canonical(profile: &Profile) -> Vec<String> {
             .map(|id| profile.symbols.resolve(*id).unwrap())
             .collect();
         result.push(format!("part {:?} {events:?}", part.header.positions));
+        let first_record = result.len();
         for item in &part.records {
             result.push(match &item.record {
                 Record::Cost {
@@ -55,6 +56,10 @@ fn canonical(profile: &Profile) -> Vec<String> {
                 ),
             });
         }
+        // dump.c sorts function contexts using producer pointer addresses;
+        // independent runs can emit a different order. Preserve duplicates
+        // and part boundaries while comparing the multiset of decoded rows.
+        result[first_record..].sort_unstable();
     }
     result
 }

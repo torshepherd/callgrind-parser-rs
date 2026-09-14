@@ -220,7 +220,14 @@ impl<R: BufRead> Decoder<R> {
         self.queue.push_back(ParseEvent::PartEnd {
             totals: self.totals.take(),
         });
+        // Callgrind --combine-dumps writes pid/cmd only in the first part.
+        // These are effective process metadata; event layouts, thread IDs,
+        // descriptions, summaries, and all body context remain part-local.
+        let pid = self.part.metadata.pid;
+        let command = self.part.metadata.command.take();
         self.part = PartHeader::default();
+        self.part.metadata.pid = pid;
+        self.part.metadata.command = command;
         self.part_line = None;
         self.started = false;
         self.previous.clear();

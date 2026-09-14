@@ -91,6 +91,8 @@ the resulting profiles with Valgrind's `callgrind_annotate`. See
 Contributors and coding agents should read [AGENTS.md](AGENTS.md) before making
 changes. Evolving plans, papercuts, decisions, and open questions live in
 [NOTES.md](NOTES.md); the ordered work list is [TODO.md](TODO.md).
+The [Callgrind/KCachegrind source audit](docs/SOURCE-AUDIT.md) documents the
+producer semantics, reader differences, and shared analysis design.
 
 ## Parser API
 

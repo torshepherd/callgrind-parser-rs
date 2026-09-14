@@ -129,9 +129,11 @@ pub struct SpannedRecord {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Metadata {
+    /// Effective process ID, inherited across parts until explicitly replaced.
     pub pid: Option<u64>,
     pub thread: Option<u64>,
     pub part: Option<u64>,
+    /// Effective command, inherited across parts until explicitly replaced.
     pub command: Option<String>,
     /// Preserve arbitrary description kinds, punctuation, and repetition.
     pub descriptions: Vec<(String, String)>,

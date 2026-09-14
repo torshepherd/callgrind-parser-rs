@@ -76,6 +76,10 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
   Preserve self costs separately from inclusive call costs and jump counts.
 - Do not synthesize full stacks or binary/inline metadata absent from the input.
   Pprof signed-range checks and any approximation belong in the converter.
+- Read `docs/SOURCE-AUDIT.md` before implementing analysis/frontend semantics.
+  A zero call count can accompany nonzero inclusive cost after a dump. Preserve
+  these edges. Do not treat reference annotator output as a universal oracle,
+  or bake KCachegrind's cycle/inclusive display heuristics into raw parsing.
 - Tests must be deterministic, non-interactive, and network-independent.
 - Nix must declare native tools and system dependencies explicitly. A passing
   ambient `cargo test` is not evidence that a Nix build is complete.
@@ -95,8 +99,9 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 The parser has an incremental decoder, an owned interned model, and active
 conformance, property, and streaming tests. Frontend binaries remain stubs.
 Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
-limits, and validation evidence. The full Callgrind/KCachegrind source audit is
-next. Do not claim complete format/frontend conformance from passing unit tests.
+limits, and validation evidence. The Callgrind/KCachegrind source audit is in
+`docs/SOURCE-AUDIT.md`; the 12-profile parsing gate and shared analysis are next.
+Do not claim complete format/frontend conformance from passing unit tests.
 
 For externally generated files, run
 `./scripts/cargo.sh run -p callgrind-parser --example inspect --locked --offline -- PROFILE`.
