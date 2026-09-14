@@ -316,6 +316,19 @@ run the fast suite, and periodically prove the whole Nix check.
 
 ## Work log
 
+### 2026-09-14: SQLite/KCachegrind native checks, environment interruption
+
+- All 12 native SQLite profiles parsed and passed self/totals checks. A headless
+  adapter against the pinned KCachegrind core matched 186,924 aggregate rows
+  across the same inputs (functions, edges, source lines and totals).
+- Rust callgrind-annotate remains a stub. These are parser/reference comparisons,
+  not output comparisons between complete annotators.
+- The coding environment disappeared before the new harness, edge fixtures and
+  Nix integration edits could be finished and committed. GitHub remains usable.
+- [SQLITE-COMPARISON-CHECKPOINT.md](docs/SQLITE-COMPARISON-CHECKPOINT.md) preserves
+  verified evidence, exact scope, native build details and recovery instructions.
+  Do not count the pending edge fixtures or full Rust/Nix gates as completed.
+
 ### 2026-09-14: Callgrind / KCachegrind source audit
 
 - Completed the planned source review against Valgrind 3.26.0 and KCachegrind

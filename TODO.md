@@ -4,8 +4,11 @@
   [docs/SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md) for pinned sources, producer/reader
   disagreements, model decisions, native experiments and minimal regressions.
   KCachegrind was inspected, not executed; runtime parity remains below.
-- [ ] **Next: run the Rust parser over all 12 profiles from the pinned SQLite matrix;**
-  check event widths, identities, associations, and self-cost totals.
+- [ ] **Finish and commit the SQLite/reference test harness.** All 12 native
+  profiles passed parser/self-total checks and 186,924 aggregate rows matched
+  KCachegrind, but the environment disappeared before implementation commits
+  and final gates. See [the checkpoint](docs/SQLITE-COMPARISON-CHECKPOINT.md).
+  Native source-pinned runs are not a rerun of the Nix closure.
 - [ ] Define annotation compatibility and differential checks on identical
   single-part input files before implementing the annotate frontend. Start
   with semantic tables; explicitly cover zero-count calls, recursive inclusive
