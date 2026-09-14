@@ -41,7 +41,7 @@ Use an existing Nix installation or a suitably configured CI runner for it.
 Run from the repository root:
 
 - Fast tests: `./scripts/cargo.sh nextest run --workspace --locked --offline`
-- Deferred parser contracts: `./scripts/cargo.sh nextest run -p callgrind-parser --locked --offline --run-ignored ignored-only`
+- Parser suite: `./scripts/cargo.sh nextest run -p callgrind-parser --locked --offline`
 - Cargo tests (also covers doctests): `./scripts/cargo.sh test --workspace --locked --offline`
 - Formatting: `./scripts/cargo.sh fmt --all --check`
 - Lints: `./scripts/cargo.sh clippy --workspace --all-targets --all-features --locked --offline -- -D warnings`
@@ -65,6 +65,17 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 - Parser behavior must be driven by the published Callgrind format and covered
   by focused tests. Prefer a minimal inline fixture for one grammar rule; use a
   test fixture builder when combinations would otherwise become unreadable.
+- Cross-check ambiguities against the producer and reader sources. The manual's
+  jump grammar differs from Valgrind output; see `NOTES.md`. Do not preserve a
+  faulty test contract solely because an earlier agent wrote it.
+- `Decoder<BufRead>` owns the one grammar/state machine. `parse_reader` and
+  `parse_profile` collect its events into an owned profile. Keep the streaming
+  path free of retained cost records and input-wide string buffers.
+- Interned string IDs and function IDs are profile-local. Function identity
+  includes object, defining file, and name; inline source files are locations.
+  Preserve self costs separately from inclusive call costs and jump counts.
+- Do not synthesize full stacks or binary/inline metadata absent from the input.
+  Pprof signed-range checks and any approximation belong in the converter.
 - Tests must be deterministic, non-interactive, and network-independent.
 - Nix must declare native tools and system dependencies explicitly. A passing
   ambient `cargo test` is not evidence that a Nix build is complete.
@@ -81,8 +92,13 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 
 ## Current state
 
-All five workspace members compile, but they are scaffolding. The parser has a
-minimal header reader, a test-fixture builder, and ignored conformance tests
-that define successive implementation slices. Read `NOTES.md`, select one
-ignored test or tightly related group, and make that slice pass without
-weakening its assertions.
+The parser has an incremental decoder, an owned interned model, and active
+conformance, property, and streaming tests. Frontend binaries remain stubs.
+Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
+limits, and validation evidence. The full Callgrind/KCachegrind source audit is
+next. Do not claim complete format/frontend conformance from passing unit tests.
+
+For externally generated files, run
+`./scripts/cargo.sh run -p callgrind-parser --example inspect --locked --offline -- PROFILE`.
+This validates declared totals against summed self costs. The `compare` example
+compares semantic records across deterministic producer compression settings.

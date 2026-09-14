@@ -1,426 +1,549 @@
 mod support;
 
-use callgrind_parser::{
-    CallRecord, Context, CostRecord, Description, EventDefinition, JumpRecord, ParseErrorKind,
-    PositionKind, Record, parse_profile,
-};
+use callgrind_parser::*;
 use support::ProfileBuilder;
 
-fn only_part(input: &str) -> callgrind_parser::Part {
-    let mut profile = parse_profile(input).expect("fixture should parse");
-    assert_eq!(profile.parts.len(), 1, "fixture should contain one part");
-    profile.parts.remove(0)
+fn cost(profile: &Profile, index: usize) -> (&Location, &[u64]) {
+    let Record::Cost { location, costs } = &profile.parts[0].records[index].record else {
+        panic!("expected self cost");
+    };
+    (location, costs)
 }
 
-fn assert_error(input: &str, kind: ParseErrorKind, line: usize) {
-    let error = parse_profile(input).expect_err("fixture should be rejected");
-    assert_eq!(error.kind, kind);
-    assert_eq!(error.line, line);
+fn text(profile: &Profile, id: Option<StringId>) -> Option<&str> {
+    id.map(|id| profile.symbols.resolve(id).unwrap())
+}
+
+fn error(input: &str, kind: ParseErrorKind, line: usize) {
+    let actual = parse_profile(input).unwrap_err();
+    assert_eq!(actual.kind, kind, "{input}");
+    assert_eq!(actual.line, line, "{input}");
+    assert!(actual.to_string().contains(&format!("line {line}")));
 }
 
 #[test]
-#[ignore = "not implemented: profile defaults and basic cost rows"]
-fn minimal_profile_can_omit_marker_and_defaults_to_version_one_and_line_positions() {
+fn defaults_and_minimal_cost() {
     let input = ProfileBuilder::new(&["Ir"])
         .without_marker()
         .body("fl=main.c")
         .body("fn=main")
         .cost(&["15"], &[90])
         .build();
-
-    let profile = parse_profile(&input).unwrap();
-    assert!(!profile.has_format_marker);
-    assert_eq!(profile.version, 1);
-    assert_eq!(profile.creator, None);
-
-    let part = &profile.parts[0];
-    assert_eq!(part.positions, vec![PositionKind::Line]);
-    assert_eq!(part.events, vec!["Ir".to_owned()]);
-    assert_eq!(
-        part.records,
-        vec![Record::Cost(CostRecord {
-            context: Context {
-                object: None,
-                file: Some("main.c".to_owned()),
-                function: Some("main".to_owned()),
-            },
-            positions: vec![15],
-            costs: vec![90],
-        })]
-    );
+    let p = parse_profile(&input).unwrap();
+    assert!(!p.header.has_format_marker);
+    assert_eq!(p.header.version, 1);
+    assert_eq!(p.header.creator, None);
+    assert_eq!(p.parts[0].header.positions, [PositionKind::Line]);
+    assert_eq!(p.symbols.resolve(p.parts[0].header.events[0]), Some("Ir"));
+    let (location, values) = cost(&p, 0);
+    assert_eq!(&location.positions[..], [15]);
+    assert_eq!(values, [90]);
+    let function = p.symbols.function(location.function).unwrap();
+    assert_eq!(text(&p, function.object), None);
+    assert_eq!(text(&p, function.file), Some("main.c"));
+    assert_eq!(text(&p, function.name), Some("main"));
 }
 
 #[test]
-#[ignore = "not implemented: comments and blank lines"]
-fn ignores_comments_and_blank_lines() {
-    let input = concat!(
-        "# callgrind format\n",
-        "# producer comment\n",
-        "events: Ir\n",
-        "\n",
-        "# body comment\n",
-        "\n",
-        "fn=main\n",
-        "1 3\n",
-    );
-
-    let profile = parse_profile(input).unwrap();
-    assert!(profile.has_format_marker);
-    assert_eq!(profile.parts.len(), 1);
-    assert_eq!(profile.parts[0].records.len(), 1);
+fn comments_crlf_tabs_and_final_line_without_newline() {
+    let p = parse_profile(
+        "# callgrind format\r\n# comment\r\nevents:\t Ir Dr\r\n\r\nfn=main\r\n\t1\t3",
+    )
+    .unwrap();
+    assert!(p.header.has_format_marker);
+    assert_eq!(p.parts.len(), 1);
+    assert_eq!(p.parts[0].records.len(), 1);
+    assert_eq!(cost(&p, 0).1, [3, 0]);
 }
 
 #[test]
-#[ignore = "not implemented: part metadata and totals"]
-fn parses_profile_and_part_metadata() {
+fn metadata_and_distinct_summary_and_totals() {
     let input = ProfileBuilder::new(&["Ir", "Dr"])
         .version(1)
-        .creator("fixture-generator 1.0")
+        .creator("tests")
         .header("pid", "42")
         .header("thread", "7")
         .header("part", "3")
         .header("cmd", "./demo --flag value")
-        .header("desc", "Trigger: Program termination")
+        .header("desc", "I1 cache: 32768 B, 64 B, 8-way")
         .header("desc", "custom kind: arbitrary: value")
-        .header("summary", "10 4")
-        .body("fl=demo.c")
+        .header("custom-header", "keep me")
+        .header("summary", "100 40")
         .body("fn=main")
         .cost(&["8"], &[10, 4])
         .body("totals: 10 4")
         .build();
-
-    let profile = parse_profile(&input).unwrap();
-    assert_eq!(profile.version, 1);
-    assert_eq!(profile.creator.as_deref(), Some("fixture-generator 1.0"));
-
-    let part = &profile.parts[0];
-    assert_eq!(part.metadata.pid, Some(42));
-    assert_eq!(part.metadata.thread, Some(7));
-    assert_eq!(part.metadata.part, Some(3));
+    let p = parse_profile(&input).unwrap();
+    assert_eq!(p.header.creator.as_deref(), Some("tests"));
+    let h = &p.parts[0].header;
     assert_eq!(
-        part.metadata.command.as_deref(),
-        Some("./demo --flag value")
+        (h.metadata.pid, h.metadata.thread, h.metadata.part),
+        (Some(42), Some(7), Some(3))
     );
+    assert_eq!(h.metadata.command.as_deref(), Some("./demo --flag value"));
     assert_eq!(
-        part.metadata.descriptions,
-        vec![
-            Description {
-                kind: "Trigger".to_owned(),
-                value: "Program termination".to_owned(),
-            },
-            Description {
-                kind: "custom kind".to_owned(),
-                value: "arbitrary: value".to_owned(),
-            },
+        h.metadata.descriptions,
+        [
+            ("I1 cache".into(), "32768 B, 64 B, 8-way".into()),
+            ("custom kind".into(), "arbitrary: value".into())
         ]
     );
-    assert_eq!(part.summary, Some(vec![10, 4]));
-    assert_eq!(part.totals, Some(vec![10, 4]));
+    assert_eq!(
+        h.metadata.extensions,
+        [("custom-header".into(), "keep me".into())]
+    );
+    assert_eq!(h.summary.as_deref(), Some([100, 40].as_slice()));
+    assert_eq!(p.parts[0].totals.as_deref(), Some([10, 4].as_slice()));
 }
 
 #[test]
-#[ignore = "not implemented: event definitions"]
-fn parses_long_and_inherited_event_definitions() {
-    let input = ProfileBuilder::new(&["Ir", "Dr"])
-        .header("event", "Ir : Instruction Fetches")
-        .header("event", "Total = Ir + 2 Dr : Weighted total")
-        .body("fn=main")
-        .cost(&["1"], &[4, 2])
-        .build();
-
-    let part = only_part(&input);
+fn compatible_version_zero() {
     assert_eq!(
-        part.event_definitions,
-        vec![
-            EventDefinition {
-                name: "Ir".to_owned(),
-                formula: None,
-                long_name: Some("Instruction Fetches".to_owned()),
-            },
-            EventDefinition {
-                name: "Total".to_owned(),
-                formula: Some("Ir + 2 Dr".to_owned()),
-                long_name: Some("Weighted total".to_owned()),
-            },
-        ]
+        parse_profile("version: 0\nevents: Ir\n1 0\n")
+            .unwrap()
+            .header
+            .version,
+        0
     );
 }
 
 #[test]
-#[ignore = "not implemented: cost width normalization"]
-fn zero_fills_omitted_trailing_event_costs() {
-    let input = ProfileBuilder::new(&["Ir", "Dr", "Dw"])
-        .body("fl=main.c")
-        .body("fn=main")
-        .body("15 90 14")
-        .build();
-
-    let part = only_part(&input);
-    let Record::Cost(cost) = &part.records[0] else {
-        panic!("expected a cost record");
-    };
-    assert_eq!(cost.positions, vec![15]);
-    assert_eq!(cost.costs, vec![90, 14, 0]);
+fn event_definitions_before_and_after_events_with_typed_terms() {
+    let p = parse_profile("event: Ir : Instruction Fetches\nevents: Ir Dr\nevent: Total = Ir + 2 Dr + 0x3*Ir : Weighted total\n1 4 2\n").unwrap();
+    let definitions = &p.parts[0].header.event_definitions;
+    assert_eq!(definitions.len(), 2);
+    assert_eq!(definitions[0].terms, None);
+    assert_eq!(
+        definitions[0].long_name.as_deref(),
+        Some("Instruction Fetches")
+    );
+    let terms = definitions[1].terms.as_ref().unwrap();
+    let resolved: Vec<_> = terms
+        .iter()
+        .map(|t| (t.coefficient, p.symbols.resolve(t.event).unwrap()))
+        .collect();
+    assert_eq!(resolved, [(1, "Ir"), (2, "Dr"), (3, "Ir")]);
+    assert_eq!(definitions[1].long_name.as_deref(), Some("Weighted total"));
 }
 
 #[test]
-#[ignore = "not implemented: position kinds and hexadecimal numbers"]
-fn parses_all_position_kinds_and_hexadecimal_numbers() {
+fn missing_trailing_costs_including_all_costs_are_zero() {
+    let p = parse_profile("events: Ir Dr Dw\n15 90 14\n16\n").unwrap();
+    assert_eq!(cost(&p, 0).1, [90, 14, 0]);
+    assert_eq!(cost(&p, 1).1, [0, 0, 0]);
+}
+
+#[test]
+fn repeated_positions_are_preserved_for_checked_aggregation() {
+    let p = parse_profile("events: Ir\nfn=main\n1 10\n* 20\n").unwrap();
+    assert_eq!(cost(&p, 0).0, cost(&p, 1).0);
+    assert_eq!(cost(&p, 0).1, [10]);
+    assert_eq!(cost(&p, 1).1, [20]);
+}
+
+#[test]
+fn all_position_columns_and_hexadecimal_counters() {
     let input = ProfileBuilder::new(&["Ir"])
         .positions(&["instr", "bb", "line"])
-        .body("fn=main")
         .body("0x10 0x2 7 0xA")
         .build();
-
-    let part = only_part(&input);
+    let p = parse_profile(&input).unwrap();
+    let h = &p.parts[0].header;
+    let (location, values) = cost(&p, 0);
     assert_eq!(
-        part.positions,
-        vec![
+        h.positions,
+        [
             PositionKind::Instruction,
             PositionKind::BasicBlock,
-            PositionKind::Line,
+            PositionKind::Line
         ]
     );
-    let Record::Cost(cost) = &part.records[0] else {
-        panic!("expected a cost record");
-    };
-    assert_eq!(cost.positions, vec![16, 2, 7]);
-    assert_eq!(cost.costs, vec![10]);
+    assert_eq!(&location.positions[..], [16, 2, 7]);
+    assert!(!location.positions.spilled());
+    assert_eq!(
+        h.position(&location.positions, PositionKind::Instruction),
+        Some(16)
+    );
+    assert_eq!(values, [10]);
 }
 
 #[test]
-#[ignore = "not implemented: subposition compression"]
-fn resolves_relative_subpositions_per_column() {
-    let input = ProfileBuilder::new(&["ticks"])
-        .positions(&["instr", "line"])
-        .body("fn=func")
-        .body("0x80001234 90 1")
-        .body("+3 * 5")
-        .body("+1 +1 6")
-        .build();
+fn every_nonempty_position_combination() {
+    for columns in [
+        "instr",
+        "bb",
+        "line",
+        "instr bb",
+        "instr line",
+        "bb line",
+        "instr bb line",
+    ] {
+        let width = columns.split_whitespace().count();
+        let values = vec!["0"; width].join(" ");
+        let p = parse_profile(&format!("positions: {columns}\nevents: Ir\n{values} 9\n")).unwrap();
+        assert_eq!(cost(&p, 0).0.positions.len(), width);
+        assert_eq!(cost(&p, 0).1, [9]);
+    }
+}
 
-    let part = only_part(&input);
-    let positions = part
-        .records
+#[test]
+fn relative_subpositions_have_independent_columns() {
+    let p = parse_profile(
+        "positions: instr line\nevents: ticks\n0x80001234 90 1\n+3 * 5\n+1 +1 6\n-0x4 -2 7\n",
+    )
+    .unwrap();
+    assert_eq!(&cost(&p, 1).0.positions[..], [0x80001237, 90]);
+    assert_eq!(&cost(&p, 2).0.positions[..], [0x80001238, 91]);
+    assert_eq!(&cost(&p, 3).0.positions[..], [0x80001234, 89]);
+}
+
+#[test]
+fn relative_origin_is_zero_at_part_start() {
+    let p = parse_profile("events: Ir\n+3 1\n").unwrap();
+    assert_eq!(&cost(&p, 0).0.positions[..], [3]);
+}
+
+#[test]
+fn zero_unknown_positions_are_not_missing_columns() {
+    let p = parse_profile("events: Ir\n0 1\n").unwrap();
+    let h = &p.parts[0].header;
+    assert_eq!(
+        h.position(&cost(&p, 0).0.positions, PositionKind::Line),
+        Some(0)
+    );
+    assert_eq!(
+        h.position(&cost(&p, 0).0.positions, PositionKind::Instruction),
+        None
+    );
+}
+
+#[test]
+fn full_unsigned_range_is_preserved_for_later_checked_pprof_conversion() {
+    let p =
+        parse_profile("positions: instr\nevents: Ir\n0xffffffffffffffff 18446744073709551615\n")
+            .unwrap();
+    assert_eq!(&cost(&p, 0).0.positions[..], [u64::MAX]);
+    assert_eq!(cost(&p, 0).1, [u64::MAX]);
+}
+
+#[test]
+fn name_spaces_are_object_file_and_function_not_one_per_tag() {
+    let p = parse_profile("events: Ir\nob=(1) app\nfl=(1) a.c\nfn=(1) main\n1 1\ncob=(1)\ncfl=(1)\ncfn=(1)\ncalls=2 1\n1 8\n").unwrap();
+    let Record::Call { source, target, .. } = &p.parts[0].records[1].record else {
+        panic!()
+    };
+    assert_eq!(source.function, target.function);
+    let f = p.symbols.function(source.function).unwrap();
+    assert_eq!(text(&p, f.object), Some("app"));
+    assert_eq!(text(&p, f.file), Some("a.c"));
+    assert_eq!(text(&p, f.name), Some("main"));
+}
+
+#[test]
+fn forward_definitions_share_caller_and_callee_namespaces() {
+    let p = parse_profile("events: Ir\nfl=(1) a.c\nfn=main\ncfi=(2) b.c\ncfn=(7) work\ncalls=3 20\n16 400\nfl=(2)\nfn=(7)\n20 400\n").unwrap();
+    let Record::Call {
+        source,
+        target,
+        count,
+        costs,
+    } = &p.parts[0].records[0].record
+    else {
+        panic!()
+    };
+    assert_eq!(*count, 3);
+    assert_eq!(&costs[..], [400]);
+    assert_eq!(&source.positions[..], [16]);
+    assert_eq!(&target.positions[..], [20]);
+    assert_eq!(target.function, cost(&p, 1).0.function);
+    assert_eq!(text(&p, target.file), Some("b.c"));
+}
+
+#[test]
+fn sparse_large_compression_ids_do_not_allocate_id_sized_vectors() {
+    let p = parse_profile(
+        "events: Ir\nfn=(18446744073709551615) main\nfn=(18446744073709551615)\n1 1\n",
+    )
+    .unwrap();
+    assert_eq!(p.symbols.functions().len(), 1);
+    assert_eq!(p.symbols.string_count(), 2);
+}
+
+#[test]
+fn redefining_a_format_alias_does_not_rewrite_existing_rows() {
+    let p =
+        parse_profile("events: Ir\nfn=(1) first\n1 1\nfn=(1) second\n2 2\nfn=(1)\n3 3\n").unwrap();
+    assert_ne!(cost(&p, 0).0.function, cost(&p, 1).0.function);
+    assert_eq!(cost(&p, 1).0.function, cost(&p, 2).0.function);
+    assert_eq!(
+        text(&p, p.symbols.function(cost(&p, 0).0.function).unwrap().name),
+        Some("first")
+    );
+}
+
+#[test]
+fn strings_are_interned_but_functions_are_qualified() {
+    let p = parse_profile(
+        "events: Ir\nob=a.so\nfl=x.c\nfn=work\n1 1\nob=b.so\nfn=work\n1 2\nfl=y.c\nfn=work\n1 3\n",
+    )
+    .unwrap();
+    let ids: Vec<_> = (0..3).map(|i| cost(&p, i).0.function).collect();
+    assert_ne!(ids[0], ids[1]);
+    assert_ne!(ids[1], ids[2]);
+    let names: Vec<_> = ids
         .iter()
-        .map(|record| match record {
-            Record::Cost(cost) => cost.positions.clone(),
-            _ => panic!("expected only cost records"),
-        })
-        .collect::<Vec<_>>();
-
-    assert_eq!(
-        part.positions,
-        vec![PositionKind::Instruction, PositionKind::Line]
-    );
-    assert_eq!(
-        positions,
-        vec![
-            vec![0x8000_1234, 90],
-            vec![0x8000_1237, 90],
-            vec![0x8000_1238, 91],
-        ]
-    );
+        .map(|id| p.symbols.function(*id).unwrap().name)
+        .collect();
+    assert_eq!(names[0], names[1]);
+    assert_eq!(names[1], names[2]);
 }
 
 #[test]
-#[ignore = "not implemented: name compression"]
-fn resolves_name_compression_in_separate_namespaces() {
-    let input = ProfileBuilder::new(&["Ir"])
-        .body("fl=(1) src/main.c")
-        .body("fn=(1) main")
-        .body("fl=(1)")
-        .body("fn=(1)")
-        .cost(&["7"], &[12])
-        .build();
-
-    let part = only_part(&input);
-    let Record::Cost(cost) = &part.records[0] else {
-        panic!("expected a cost record");
-    };
+fn inline_files_do_not_change_function_identity_and_fn_restores_definition_file() {
+    let p = parse_profile("events: Ir\nfl=(1) main.c\nfn=main\n10 1\nfi=(2) inline.h\n20 2\nfe=(1)\n11 3\nfi=(2)\nfn=other\n30 4\n").unwrap();
+    assert_eq!(cost(&p, 0).0.function, cost(&p, 1).0.function);
+    assert_eq!(cost(&p, 1).0.function, cost(&p, 2).0.function);
+    assert_eq!(text(&p, cost(&p, 1).0.file), Some("inline.h"));
     assert_eq!(
-        cost.context,
-        Context {
+        text(&p, p.symbols.function(cost(&p, 1).0.function).unwrap().file),
+        Some("main.c")
+    );
+    assert_eq!(text(&p, cost(&p, 3).0.file), Some("main.c"));
+}
+
+#[test]
+fn names_preserve_cpp_punctuation_unicode_and_unknown_markers() {
+    let p = parse_profile(
+        "events: Ir\nob=???\nfl=src/naïve code.cpp\nfn=(anonymous namespace)::f<int>(x = 1)\n1 2\n",
+    )
+    .unwrap();
+    let f = p.symbols.function(cost(&p, 0).0.function).unwrap();
+    assert_eq!(
+        text(&p, f.name),
+        Some("(anonymous namespace)::f<int>(x = 1)")
+    );
+    assert_eq!(text(&p, f.file), Some("src/naïve code.cpp"));
+    assert_eq!(text(&p, f.object), Some("???"));
+}
+
+#[test]
+fn absent_context_remains_absent() {
+    let p = parse_profile("events: Ir\n1 2\n").unwrap();
+    assert_eq!(
+        p.symbols.function(cost(&p, 0).0.function).unwrap(),
+        &Function {
             object: None,
-            file: Some("src/main.c".to_owned()),
-            function: Some("main".to_owned()),
+            file: None,
+            name: None
         }
     );
 }
 
 #[test]
-#[ignore = "not implemented: calls and called contexts"]
-fn parses_call_associations_and_cfl_alias() {
-    let input = ProfileBuilder::new(&["Ir"])
-        .body("fl=caller.c")
-        .body("fn=main")
-        .body("cfl=callee.c")
-        .body("cfn=work")
-        .body("calls=3 20")
-        .body("16 400")
-        .build();
-
-    let part = only_part(&input);
-    assert_eq!(
-        part.records,
-        vec![Record::Call(CallRecord {
-            caller: Context {
-                object: None,
-                file: Some("caller.c".to_owned()),
-                function: Some("main".to_owned()),
-            },
-            callee: Context {
-                object: None,
-                file: Some("callee.c".to_owned()),
-                function: Some("work".to_owned()),
-            },
-            count: 3,
-            target_positions: vec![20],
-            source_positions: vec![16],
-            costs: vec![400],
-        })]
-    );
-}
-
-#[test]
-#[ignore = "not implemented: jump associations"]
-fn parses_unconditional_and_conditional_jumps() {
-    let input = ProfileBuilder::new(&["Ir"])
-        .body("fl=main.c")
-        .body("fn=main")
-        .body("10 1")
-        .body("jump=4 20")
-        .body("jcnd=10 7 30")
-        .build();
-
-    let part = only_part(&input);
-    let context = Context {
-        object: None,
-        file: Some("main.c".to_owned()),
-        function: Some("main".to_owned()),
+fn callee_context_defaults_and_resets_between_calls() {
+    let p = parse_profile("events: Ir\nob=app\nfl=main.c\nfn=main\ncob=lib.so\ncfi=lib.c\ncfn=foreign\ncalls=1 20\n10 8\ncfn=local\ncalls=2 30\n10 9\n").unwrap();
+    let Record::Call { target: a, .. } = &p.parts[0].records[0].record else {
+        panic!()
+    };
+    let Record::Call { target: b, .. } = &p.parts[0].records[1].record else {
+        panic!()
     };
     assert_eq!(
-        part.records,
-        vec![
-            Record::Cost(CostRecord {
-                context: context.clone(),
-                positions: vec![10],
-                costs: vec![1],
-            }),
-            Record::Jump(JumpRecord {
-                context: context.clone(),
-                executed: 4,
-                taken: None,
-                target_positions: vec![20],
-            }),
-            Record::Jump(JumpRecord {
-                context,
-                executed: 10,
-                taken: Some(7),
-                target_positions: vec![30],
-            }),
-        ]
+        text(&p, p.symbols.function(a.function).unwrap().object),
+        Some("lib.so")
     );
+    assert_eq!(
+        text(&p, p.symbols.function(b.function).unwrap().object),
+        Some("app")
+    );
+    assert_eq!(text(&p, b.file), Some("main.c"));
 }
 
 #[test]
-#[ignore = "not implemented: multiple profile parts"]
-fn parses_multiple_parts() {
-    let input = concat!(
-        "# callgrind format\n",
-        "creator: unit-test\n",
-        "part: 1\n",
-        "events: Ir\n",
-        "fn=first\n",
-        "1 10\n",
-        "part: 2\n",
-        "events: Ir\n",
-        "fn=second\n",
-        "2 20\n",
-    );
-
-    let profile = parse_profile(input).unwrap();
-    assert_eq!(profile.parts.len(), 2);
-    assert_eq!(profile.parts[0].metadata.part, Some(1));
-    assert_eq!(profile.parts[1].metadata.part, Some(2));
+fn target_compression_uses_previous_source_and_does_not_advance_it() {
+    let p = parse_profile("positions: instr line\nevents: Ir\nfn=main\n0x100 10 1\ncfn=work\ncalls=2 +0x20 +5\n+4 +1 9\n+1 * 2\n").unwrap();
+    let Record::Call { source, target, .. } = &p.parts[0].records[1].record else {
+        panic!()
+    };
+    assert_eq!(&target.positions[..], [0x120, 15]);
+    assert_eq!(&source.positions[..], [0x104, 11]);
+    assert_eq!(&cost(&p, 2).0.positions[..], [0x105, 11]);
 }
 
 #[test]
-#[ignore = "not implemented: required events validation"]
-fn rejects_a_part_without_events() {
-    assert_error(
-        "# callgrind format\nfl=main.c\nfn=main\n1 1\n",
-        ParseErrorKind::MissingEvents,
-        2,
-    );
+fn call_costs_are_not_self_costs_and_zero_calls_are_retained() {
+    let p =
+        parse_profile("events: Ir Dr\nfn=main\n1 5\ncfn=work\ncalls=0 20\n# comment\n\n1 900\n")
+            .unwrap();
+    assert_eq!(p.parts[0].records.len(), 2);
+    assert_eq!(cost(&p, 0).1, [5, 0]);
+    let Record::Call { count, costs, .. } = &p.parts[0].records[1].record else {
+        panic!()
+    };
+    assert_eq!(*count, 0);
+    assert_eq!(&costs[..], [900, 0]);
+    assert_eq!(p.parts[0].records[1].line, 5);
 }
 
 #[test]
-#[ignore = "not implemented: format version validation"]
-fn rejects_an_unsupported_version() {
-    assert_error(
-        "# callgrind format\nversion: 2\nevents: Ir\nfn=main\n1 1\n",
-        ParseErrorKind::UnsupportedVersion,
-        2,
-    );
+fn recursive_edges_and_cycles_are_preserved_without_expansion() {
+    let p = parse_profile("events: Ir\nfn=A\ncfn=A\ncalls=2 1\n1 20\ncfn=B\ncalls=3 2\n1 30\nfn=B\ncfn=A\ncalls=4 1\n2 40\n").unwrap();
+    let Record::Call {
+        source: a,
+        target: a2,
+        ..
+    } = &p.parts[0].records[0].record
+    else {
+        panic!()
+    };
+    let Record::Call {
+        source: a3,
+        target: b,
+        ..
+    } = &p.parts[0].records[1].record
+    else {
+        panic!()
+    };
+    let Record::Call {
+        source: b2,
+        target: a4,
+        ..
+    } = &p.parts[0].records[2].record
+    else {
+        panic!()
+    };
+    assert_eq!(a.function, a2.function);
+    assert_eq!(a.function, a3.function);
+    assert_eq!(a.function, a4.function);
+    assert_eq!(b.function, b2.function);
+    assert_ne!(a.function, b.function);
 }
 
 #[test]
-#[ignore = "not implemented: compression reference validation"]
-fn rejects_an_unknown_name_compression_id() {
-    assert_error(
-        "# callgrind format\nevents: Ir\n\nfl=(7)\nfn=main\n1 1\n",
-        ParseErrorKind::UnknownNameId,
-        4,
-    );
+fn real_valgrind_jumps_have_following_source_rows_and_taken_over_executed() {
+    // Valgrind 3.26.0 callgrind/dump.c:fprint_jcc, not the stale manual grammar.
+    let p = parse_profile("events: Ir\nfn=main\n10 1\njump=4 20\n10\njcnd=7/10 30\n11\n").unwrap();
+    assert_eq!(p.parts[0].records.len(), 3);
+    let Record::Jump {
+        source,
+        target,
+        executed,
+        taken,
+    } = &p.parts[0].records[1].record
+    else {
+        panic!()
+    };
+    assert_eq!((*executed, *taken), (4, None));
+    assert_eq!(&source.positions[..], [10]);
+    assert_eq!(&target.positions[..], [20]);
+    let Record::Jump {
+        source,
+        target,
+        executed,
+        taken,
+    } = &p.parts[0].records[2].record
+    else {
+        panic!()
+    };
+    assert_eq!((*executed, *taken), (10, Some(7)));
+    assert_eq!(&source.positions[..], [11]);
+    assert_eq!(&target.positions[..], [30]);
 }
 
 #[test]
-#[ignore = "not implemented: integer overflow validation"]
-fn rejects_a_number_larger_than_u64() {
-    assert_error(
-        "# callgrind format\nevents: Ir\n\nfn=main\n1 18446744073709551616\n",
-        ParseErrorKind::NumberOverflow,
-        5,
-    );
+fn jump_targets_can_change_file_and_function_and_then_reset() {
+    let p = parse_profile(
+        "events: Ir\nfl=main.c\nfn=main\njfi=other.c\njfn=other\njump=1 20\n10\njump=2 30\n11\n",
+    )
+    .unwrap();
+    let Record::Jump { source, target, .. } = &p.parts[0].records[0].record else {
+        panic!()
+    };
+    assert_ne!(source.function, target.function);
+    assert_eq!(text(&p, target.file), Some("other.c"));
+    let Record::Jump { source, target, .. } = &p.parts[0].records[1].record else {
+        panic!()
+    };
+    assert_eq!(source.function, target.function);
+    assert_eq!(text(&p, target.file), Some("main.c"));
 }
 
 #[test]
-#[ignore = "not implemented: malformed number validation"]
-fn rejects_a_malformed_number() {
-    assert_error(
-        "# callgrind format\nevents: Ir\n\nfn=main\n1 nope\n",
-        ParseErrorKind::InvalidNumber,
-        5,
-    );
+fn multiple_parts_preserve_metadata_and_reset_layout_and_position_state() {
+    let p = parse_profile("part: 1\nthread: 7\npositions: instr line\nevents: Ir Dr\nfn=(1) first\n0x100 10 3 4\npart: 2\nthread: 8\nevents: Dw\nfn=(1)\n+2 9\n").unwrap();
+    assert_eq!(p.parts.len(), 2);
+    assert_eq!(p.parts[0].header.metadata.thread, Some(7));
+    assert_eq!(p.parts[1].header.metadata.thread, Some(8));
+    assert_eq!(p.parts[1].header.positions, [PositionKind::Line]);
+    let Record::Cost { location, costs } = &p.parts[1].records[0].record else {
+        panic!()
+    };
+    assert_eq!(&location.positions[..], [2]);
+    assert_eq!(&costs[..], [9]);
+    assert_eq!(location.function, cost(&p, 0).0.function);
 }
 
 #[test]
-#[ignore = "not implemented: call association pairing"]
-fn rejects_a_call_without_its_mandatory_cost_row() {
-    assert_error(
-        "# callgrind format\nevents: Ir\n\ncfn=work\ncalls=1 20\n",
-        ParseErrorKind::MissingAssociationCost,
-        5,
+fn header_only_profile_and_summary_padding() {
+    let p = parse_profile("summary: 10\nevents: Ir Dr\n").unwrap();
+    assert!(p.parts[0].records.is_empty());
+    assert_eq!(
+        p.parts[0].header.summary.as_deref(),
+        Some([10, 0].as_slice())
     );
 }
 
-#[test]
-#[ignore = "not implemented: positions ordering validation"]
-fn rejects_positions_out_of_defined_order() {
-    assert_error(
-        "# callgrind format\npositions: line instr\nevents: Ir\n\nfn=main\n1 0x10 1\n",
-        ParseErrorKind::InvalidPositionOrder,
-        2,
-    );
+macro_rules! rejects {
+    ($($name:ident: $input:expr, $kind:ident, $line:expr;)*) => {$ (
+        #[test] fn $name() { error($input, ParseErrorKind::$kind, $line); }
+    )*};
 }
 
-#[test]
-#[ignore = "not implemented: cost width validation"]
-fn rejects_more_costs_than_declared_events() {
-    assert_error(
-        "# callgrind format\nevents: Ir\n\nfn=main\n1 2 3\n",
-        ParseErrorKind::InvalidCostWidth,
-        5,
-    );
+rejects! {
+    empty_input: "", MissingEvents, 1;
+    missing_events: "# callgrind format\nfl=main.c\n1 1\n", MissingEvents, 2;
+    empty_events: "events: \n", MissingEvents, 1;
+    duplicate_events_header: "events: Ir\nevents: Dr\n", DuplicateEvents, 2;
+    duplicate_event_columns: "events: Ir Ir\n", DuplicateEvents, 1;
+    unsupported_version: "version: 2\nevents: Ir\n", UnsupportedVersion, 1;
+    misplaced_version: "events: Ir\nversion: 1\n", InvalidHeader, 2;
+    duplicate_version: "version: 1\nversion: 1\n", InvalidHeader, 2;
+    unknown_alias: "events: Ir\nfl=(7)\n", UnknownNameId, 2;
+    alias_namespace_isolation: "events: Ir\nfl=(7) a.c\nfn=(7)\n", UnknownNameId, 3;
+    malformed_alias: "events: Ir\nfn=(7 main\n", InvalidName, 2;
+    alias_requires_separator: "events: Ir\nfn=(7)main\n", InvalidName, 2;
+    compressed_mangled_context_is_explicitly_unsupported: "events: Ir\nfn=(1) f\nfn=(2) (1)'2\n", UnsupportedExtension, 3;
+    numeric_overflow: "events: Ir\n1 18446744073709551616\n", NumberOverflow, 2;
+    hexadecimal_overflow: "events: Ir\n1 0x10000000000000000\n", NumberOverflow, 2;
+    bad_number: "events: Ir\n1 nope\n", InvalidNumber, 2;
+    numeric_trailing_junk: "events: Ir\n1 12junk\n", InvalidNumber, 2;
+    empty_hexadecimal: "events: Ir\n1 0x\n", InvalidNumber, 2;
+    signed_cost: "events: Ir\n1 -1\n", InvalidNumber, 2;
+    positive_signed_cost: "events: Ir\n1 +1\n", InvalidNumber, 2;
+    overflowing_relative: "events: Ir\n18446744073709551615 1\n+1 1\n", NumberOverflow, 3;
+    underflowing_relative: "events: Ir\n1 1\n-2 1\n", PositionUnderflow, 3;
+    invalid_position_order: "positions: line instr\nevents: Ir\n", InvalidPositionOrder, 1;
+    repeated_position_kind: "positions: line line\n", InvalidPositionOrder, 1;
+    empty_positions: "positions: \n", InvalidPositionOrder, 1;
+    unknown_position_kind: "positions: address\n", InvalidPositionOrder, 1;
+    missing_position_column: "positions: instr line\nevents: Ir\n1\n", InvalidPositionWidth, 3;
+    extra_event_column: "events: Ir\n1 2 3\n", InvalidCostWidth, 2;
+    extra_summary_column: "summary: 1 2\nevents: Ir\n1 1\n", InvalidCostWidth, 1;
+    unknown_body_tag: "events: Ir\nwat=oops\n", UnknownBodyLine, 2;
+    malformed_body: "events: Ir\ngarbage\n", UnknownBodyLine, 2;
+    missing_callee: "events: Ir\ncalls=1 20\n1 1\n", MissingCalledFunction, 2;
+    call_without_cost: "events: Ir\ncfn=work\ncalls=1 20\n", MissingAssociationCost, 3;
+    call_interrupted_by_context: "events: Ir\ncfn=work\ncalls=1 20\nfn=other\n", MissingAssociationCost, 3;
+    call_interrupted_by_part: "events: Ir\ncfn=work\ncalls=1 20\npart: 2\n", MissingAssociationCost, 3;
+    bad_call_target_width: "events: Ir\ncfn=work\ncalls=1 20 30\n", InvalidPositionWidth, 3;
+    missing_jump_source: "events: Ir\njump=1 20\n", MissingAssociationCost, 2;
+    jump_with_cost_columns: "events: Ir\njump=1 20\n10 2\n", InvalidCostWidth, 3;
+    impossible_jump_counts: "events: Ir\njcnd=11/10 20\n10\n", InvalidJumpCounts, 2;
+    stale_manual_jcnd_syntax: "events: Ir\njcnd=10 7 20\n", InvalidPositionWidth, 2;
+    incomplete_expression: "event: Total = Ir +\nevents: Ir\n", InvalidEventDefinition, 1;
+    unsupported_expression_operator: "event: Total = Ir - Dr\nevents: Ir Dr\n", InvalidEventDefinition, 1;
+    overflowed_expression_coefficient: "event: Total = 18446744073709551616 Ir\n", NumberOverflow, 1;
+    data_after_totals: "events: Ir\n1 2\ntotals: 2\n2 3\n", UnexpectedRecord, 4;
+    duplicate_totals: "events: Ir\n1 2\ntotals: 2\ntotals: 2\n", InvalidHeader, 4;
+    missing_events_in_second_part: "events: Ir\n1 2\npart: 2\nfn=other\n", MissingEvents, 4;
 }

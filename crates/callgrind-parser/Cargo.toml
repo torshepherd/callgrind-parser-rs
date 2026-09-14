@@ -8,3 +8,11 @@ description = "Parser library for Callgrind profile data"
 
 [lib]
 path = "src/lib.rs"
+
+[dependencies]
+nom.workspace = true
+lasso.workspace = true
+smallvec.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

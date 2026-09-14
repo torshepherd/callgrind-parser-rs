@@ -6,9 +6,9 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
-Build the tests and fixtures before filling in the implementations. The aim is
-to leave future agents a map of small, independently executable tasks with
-clear compatibility targets.
+The parser foundation is implemented with active tests. Frontend and analysis
+work remains ahead. `TODO.md` is the ordered checklist; the full source audit
+of Callgrind and KCachegrind is next, before expanding analysis semantics.
 
 The primary reference is the
 [Callgrind Format Specification](https://valgrind.org/docs/manual/cl-format.html),
@@ -30,30 +30,116 @@ matrix complement, but do not replace, minimal grammar fixtures.
 - `nix flake check -L` is the eventual GitHub Actions contract.
 - The parser is shared infrastructure. Frontends must consume it rather than
   parse the text format themselves.
-- The first conformance harness targets an owned normalized model so tests can
-  state semantic expectations. This does not yet settle whether a streaming
-  parser should also exist beneath or alongside that model.
+- Both streaming and owned use cases use one decoder. `Decoder<R: BufRead>`
+  incrementally emits headers, records, and part endings; `parse_reader` and
+  `parse_profile` collect those events into owned semantic data.
 - Differential tests compare two consumers of the same generated profile.
   Cross-machine raw cost totals are not golden values.
 - SQLite is the first realistic profiled workload. More third-party workloads
   can be pinned in Nix when they add distinct coverage.
 
+## Parser architecture (2026-09-14)
+
+The old model was provisional and was replaced rather than preserved as an API
+constraint. It duplicated context strings per record, omitted jump source
+positions, conflated function identity with inline source attribution, and did
+not settle streaming or interning. It also treated derived-event formulas as
+opaque strings. Those gaps would have affected all four consumers.
+
+The decoder reads incrementally through `BufRead`, framing complete UTF-8 lines
+and using Nom 8 for numeric and expression tokens. It emits `PartStart`,
+`Record`, and `PartEnd` events. It retains only the current header, parser state,
+compression dictionaries, interned symbols/functions, one bounded line buffer,
+and its small event queue. This is **not constant-memory parsing**: dictionaries
+grow with unique names/functions. It does not retain all records or the full
+input. A consumer may stop reading to cancel and may retain dictionaries with
+`into_symbols()`; cancellation does not validate unread input.
+
+`parse_reader` collects those exact events into an owned `Profile` for the TUI
+and web backend. `parse_profile(&str)` uses the same path. The owned result has
+no input lifetime and is Send + Sync. Lasso interns each distinct text once;
+freezing discards construction-time lookup maps and shares immutable tables.
+`StringId` and `FunctionId` are typed, profile-local handles, not serialized
+wire IDs or stable identifiers across different profiles.
+
+Functions are identified by `(object, defining file, name)`. Cost locations
+separately carry the actual source file and position columns, so `fi`/`fe` do
+not split one function into unrelated nodes. Unknown context remains absent;
+literal `???` names are retained. Calls and jumps have explicit source and
+target locations. Recursion/cycles are retained as edges, never expanded into
+a tree during parsing. Self costs, inclusive call costs, and jump counts are
+distinct. Repeated rows remain available for later checked aggregation.
+
+SmallVec keeps the maximum three position columns inline. Costs are dense
+boxed arrays in each part's event order, with omitted trailing values zeroed.
+This avoids per-row name maps and spare vector capacity, but is not the final
+allocation-optimized storage design. No graph library or unsafe custom arena
+is selected before the analysis workload is measured. Proptest is test-only.
+
+All raw counts and positions are checked `u64`; relative overflow/underflow
+is an error. Summary and totals remain separate. Event formulas are parsed
+into coefficient/name terms, but reference resolution, cycle detection, units,
+and evaluation remain analysis work. Comments are discarded; record order and
+input line numbers are retained. Unknown headers/descriptions are preserved;
+unknown body syntax is rejected rather than silently losing data.
+
+| Consumer | Information available | Work still required |
+| --- | --- | --- |
+| Terminal/browser analysis | Qualified function IDs, objects/files, source/instruction positions, call/jump edges, event layouts, part/thread metadata | Shared indexes, checked aggregation, cycles, query API and presentation |
+| Annotate | Self costs, inclusive edge costs, call counts, source files/lines, summary and totals | Reference-compatible ranking, percentages, recursion and formatting |
+| pprof | Function/location names, available addresses/lines, raw events and values, thread metadata | Schema, checked u64-to-i64 conversion, units, mapping policy, gzip/Prost output and independent validation |
+
+Pprof samples describe stacks; an aggregate Callgrind graph does **not generally
+determine the original full stacks**. The converter must select and document a
+policy (for example exact exclusive leaf samples with reduced call-path detail,
+or an explicitly approximate path allocation). It must not count inclusive
+edges again as self samples, fabricate binary load ranges/build IDs or inline
+chains, or cast overflowing counters to signed protobuf values. String interning
+here does not replace pprof's own string table, whose first entry must be empty.
+
+### Compatibility findings from targeted source checks
+
+- The manual's jump description diverges from Valgrind 3.26.0 `dump.c`:
+  actual conditional jumps are `jcnd=taken/executed target`, and both jump
+  kinds have a following **source-position** row. `jfi`/`jfn` select jump
+  destinations. KCachegrind's loader agrees with the producer. The old ignored
+  jump fixture had neither the actual counter syntax nor the source row.
+- File tags (`fl`, `fi`, `fe`, `cfi`, `cfl`, `jfi`) share a format compression
+  namespace; `fn`, `cfn`, `jfn` share another; `ob`, `cob` share the third.
+  Sparse wire IDs use hash maps. Redefinitions affect future uses only. Current
+  multipart policy retains aliases through the file and resets part-local
+  layout, position, and context state; broader concatenation behavior belongs
+  in the upcoming source audit.
+- The decoder accepts version 0 as well as version 1, following the manual's
+  compatibility prose. Explicitly empty/duplicate event declarations fail.
+- We support actual Valgrind jump syntax, not the ambiguous single-line jump
+  dialect described in the manual. Input-wide source compatibility is not yet
+  claimed. Compressed mangled contexts are explicitly rejected as unsupported;
+  they and other extensions need the full audit.
+
+Sources examined: [format manual](https://valgrind.org/docs/manual/cl-format.html),
+[Valgrind 3.26.0 source archive](https://sourceware.org/pub/valgrind/valgrind-3.26.0.tar.bz2)
+(`callgrind/dump.c`, `callgrind/callgrind_annotate.in`),
+[KCachegrind loader](https://github.com/KDE/kcachegrind/blob/master/libcore/cachegrindloader.cpp)
+(Git blob `0289e8f68f2ec209dbdac3bb9e64132251e88903`), and
+[pprof schema](https://github.com/google/pprof/blob/main/proto/profile.proto).
+These targeted checks do not complete the full source audit in `TODO.md`.
+
 ## Test plan
 
 ### Parser unit fixtures
 
-Current harness status: three active parser scaffold/builder tests, three
-frontend dependency smoke tests, and 19 ignored conformance tests. Run deferred contracts
-with:
+Current harness status: 90 active parser tests (including fixed-seed property
+tests) and three frontend dependency smoke tests. No parser contracts are
+ignored. Run the parser suite with:
 
 ```console
-./scripts/cargo.sh nextest run -p callgrind-parser \
-  --locked --offline --run-ignored ignored-only
+./scripts/cargo.sh nextest run -p callgrind-parser --locked --offline
 ```
 
-Future agents should normally select one ignored test or a tightly coupled
-group, remove those `ignore` attributes, and implement until the selected
-slice and the default suite pass.
+Add focused regression cases before extending behavior. Earlier ignored tests
+were provisional: the stale jump test was corrected against the producer,
+rather than made into a passing test of the wrong grammar.
 
 Use small inline strings when a test targets one rule. Build a test-only
 profile generator once combinations of positions, events, and associations
@@ -78,11 +164,12 @@ Coverage slices from the format specification:
 - Context specifications: `ob`, `fl`, `fi`, `fe`, and `fn`.
 - Called-context specifications: `cob`, `cfi`, historical alias `cfl`, and
   `cfn`.
-- Name-compression definitions and references, including independent ID spaces
-  for each position-specification kind.
+- Name-compression definitions and references, with object, file, and function
+  namespaces shared across their caller/callee/jump aliases.
 - Calls: called context, `calls=count target-position`, and its mandatory
   following inclusive-cost row.
-- Unconditional `jump` and conditional `jcnd` associations.
+- Actual Valgrind `jump=count target` and `jcnd=taken/executed target`, each
+  followed by a source-position row; `jfi` and `jfn` destination context.
 - Names containing spaces and punctuation where the grammar permits the rest
   of a line to be arbitrary text.
 - Useful malformed cases: missing `events`, bad compression references,
@@ -92,6 +179,22 @@ Coverage slices from the format specification:
 For each accepted fixture, assert structured meaning rather than merely
 `is_ok()`. For each rejected fixture, assert a stable error category and source
 location rather than the full presentation string.
+
+### Active coverage and remaining gaps
+
+| Test file | Coverage |
+| --- | --- |
+| `conformance.rs` | 76 cases: headers/parts, event terms, all position layouts, full u64 range, compression, qualified and inline contexts, calls/recursion/cycles, actual jumps, malformed input and located errors; includes fixture-builder check |
+| `streaming.rs` | 8 cases: all small buffer sizes including UTF-8 splits, event ordering, early emission and fused errors, dictionary growth, invalid encoding, I/O failure, line-size limit, owned lifetimes/Send+Sync |
+| `properties.rs` | 5 fixed-seed tests × 128 generated cases: decimal/hex equivalence, relative/absolute equivalence, zero-padding, arbitrary-byte/chunk equivalence, arbitrary UTF-8 error handling |
+| `src/lib.rs` | Legacy header-scanner compatibility for the frontend stubs |
+
+There are no ignored parser tests. This is sufficient to start using and
+extending the foundation with regression tests, not evidence of complete
+format support. Remaining gates include the full upstream audit, 12-profile
+SQLite parsing, allocation/throughput benchmarks, derived-event evaluation,
+and independent annotate/pprof conformance. The dependency gzip/Prost test is
+still not a pprof conversion test.
 
 ### Generated fixture utility
 
@@ -128,35 +231,30 @@ Planned layers:
 
 ## Implementation plan
 
-1. Define the parser's public model and error taxonomy just far enough to make
-   the first grammar tests compile.
-2. Add header/part parsing tests and implement them.
-3. Add cost-row, context, and numeric/compression tests and implement them.
-4. Add association tests (`calls`, `jump`, and `jcnd`) and implement them.
-5. Run the parser across the 12 real profiles and close format gaps found in
-   actual Valgrind output.
-6. Design annotation semantics and differential normalization.
-7. Implement the pprof converter, then the TUI and web interfaces on the stable
-   shared model.
+The model, decoder, and initial active grammar suite are implemented. Follow
+`TODO.md` next: source audit, full 12-profile parsing checks, shared analysis,
+and then frontend behavior with independent references. Passing the current
+suite establishes a foundation, not complete compatibility with every producer.
 
 Prefer thin vertical slices: add a focused failing test, implement that rule,
 run the fast suite, and periodically prove the whole Nix check.
 
 ## Unsolved questions
 
-- Should the public parser return one owned tree, expose a streaming iterator,
-  or offer both layers?
-- Should the model preserve source ordering/comments for round-tripping, or is
-  a normalized semantic representation enough?
-- How tolerant should parsing be of unknown header keys and producer-specific
-  extensions? The spec explicitly permits unknown `desc` types, but broader
-  forward-compatibility policy is undecided.
-- Should repeated position costs be aggregated during parsing or retained as
-  records for consumers to aggregate?
-- What integer type and overflow policy should costs, addresses, call counts,
-  and inherited-event arithmetic use?
-- How should multi-part files be represented given that Callgrind can emit
-  them while `callgrind_annotate` currently handles only one part?
+- Which additional producer dialects should be supported: compressed mangled
+  contexts, position ranges, deprecated recursion tags, basic-block detail
+  records, and the manual's divergent single-line jump description? Currently
+  unsupported body syntax is an error, not silently discarded data.
+- Should non-UTF-8 filenames be represented as bytes? Current input is UTF-8
+  (ASCII is a subset), with invalid encodings rejected rather than replaced.
+- Which configurable upload/record/symbol budgets should the web backend use?
+  Individual input lines are capped at 8 MiB now; dictionaries and the owned
+  record collection still grow with input size.
+- What measured allocation/latency targets should guide compact record storage
+  and shared analysis indexes? The initial model has no scaling benchmark yet.
+- How should unknown or cyclic derived-event references be diagnosed during
+  analysis, and how should overflow in coefficient evaluation be reported?
+- How should part/thread selection, merging, and graph cycles be presented?
 - How exact should `callgrind-annotate` output compatibility be: byte-for-byte,
   normalized text, or semantic tables with an optional compatibility renderer?
 - How should Callgrind events map to pprof sample types and units?
@@ -198,8 +296,8 @@ run the fast suite, and periodically prove the whole Nix check.
 - Host CPU dispatch can change optimized library code paths even with a pinned
   x86_64 userspace closure. This is why the matrix validates structure instead
   of absolute event totals.
-- The initial parser function recognizes only `version` and `events`; its name
-  and return type should not be treated as a settled public API.
+- The legacy `parse_header` helper is only a field scanner retained for the
+  frontend stubs. Actual input validation uses the shared decoder.
 
 ## Work log
 
@@ -254,6 +352,61 @@ run the fast suite, and periodically prove the whole Nix check.
 - Formatted the previously unchecked conformance tests without changing their
   assertions. Nix and the native profiling matrix have not been rerun in this
   VM; their prior success does not validate the new Nix Rust derivation.
+
+### 2026-09-14: parser model audit and implementation
+
+- Replaced the old owned-string scaffold with the model/decoder described
+  above. Added Nom 8.0.0, Lasso 0.7.3, SmallVec, and test-only Proptest 1.11.0;
+  Cargo regenerated the locked dependency graph. Rust setup remains unchanged.
+- Replaced 19 ignored contracts with active conformance and failure tests,
+  added streaming/lifetime checks and fixed-seed property tests. The workspace
+  now has 93 passing tests: 90 parser tests and three dependency smoke tests.
+  Formatting, Clippy with warnings denied, Cargo tests, and nextest pass using
+  locked, offline Cargo commands. No tests launch Valgrind or other subprocesses.
+- Built Valgrind 3.26.0 in `.dev/reference/` using the host toolchain, without
+  system installation. Source archive SHA-256:
+  `8d54c717029106f1644aadaf802ab9692e53d93dd015cbd19e74190eba616bd7`.
+  Ran the checked-in `workload/parser-smoke.c` as a statically linked binary.
+  A profile with instruction/line positions, jumps, cache and branch simulation
+  parsed into 5,291 records, 108 functions, 185 calls, and 345 jumps. All 13
+  self-cost sums matched the producer's `totals:` values. `callgrind_annotate`
+  also read that exact profile successfully. Its instruction summary was
+  217,155, while emitted self costs/totals were 217,153: another reason to
+  preserve both fields. These numbers are observations, not cross-host goldens.
+- Two additional producer runs with instruction counters only, jumps enabled,
+  and string/position compression respectively enabled and disabled produced
+  matching semantic records, including every resolved source/target position,
+  function, count, and cost. The `compare` example compared 5,292 entries (one
+  part header plus 5,291 records), excluding process metadata and input line
+  numbers. Each also passed self-cost/totals checks.
+- These are native reference smoke runs, **not** a rerun of the Nix checks or
+  the 12-profile SQLite matrix. Nix checks remain unverified in this session.
+- Added `TODO.md` with the complete Callgrind/KCachegrind source dive explicitly
+  first. The targeted emitter/loader checks above are not that full audit.
+
+Native reference commands, once Valgrind and a C toolchain are available:
+
+```bash
+mkdir -p .dev/reference
+cc -static -g -O0 -fno-inline workload/parser-smoke.c -o .dev/reference/parser-smoke
+for compression in yes no; do
+  valgrind --tool=callgrind --error-exitcode=99 \
+    --collect-jumps=yes --dump-instr=yes --cache-sim=no --branch-sim=no \
+    --compress-strings="$compression" --compress-pos="$compression" \
+    --callgrind-out-file=".dev/reference/encoding-$compression.callgrind" \
+    --log-file=".dev/reference/encoding-$compression.log" \
+    .dev/reference/parser-smoke
+done
+./scripts/cargo.sh run -p callgrind-parser --example inspect --locked --offline -- \
+  .dev/reference/encoding-yes.callgrind .dev/reference/encoding-no.callgrind
+./scripts/cargo.sh run -p callgrind-parser --example compare --locked --offline -- \
+  .dev/reference/encoding-yes.callgrind .dev/reference/encoding-no.callgrind
+```
+
+The static link above was tested on this x86_64 Ubuntu host. It avoids requiring
+dynamic-loader debug symbols for the reference smoke run; it is not a portable
+native-tool bootstrap. Default Cargo unit/property tests need neither native
+reference tools nor these generated files.
 
 References: [rustup installation](https://rust-lang.github.io/rustup/installation/index.html),
 [nextest binaries](https://nexte.st/docs/installation/pre-built-binaries/),

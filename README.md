@@ -10,9 +10,9 @@ Callgrind data useful in more places without each tool growing its own partial
 and subtly incompatible reader.
 
 > [!NOTE]
-> The project is at the scaffolding stage. The workspace and its reproducible
-> test environment work, and parser conformance contracts are being assembled,
-> but the parser and applications are not implemented beyond small stubs.
+> The parser foundation is implemented with incremental decoding, an owned
+> interned model, and active grammar/property tests. The applications remain
+> stubs. Full producer compatibility and analysis semantics are still in progress.
 
 ## Why this exists
 
@@ -90,4 +90,13 @@ the resulting profiles with Valgrind's `callgrind_annotate`. See
 
 Contributors and coding agents should read [AGENTS.md](AGENTS.md) before making
 changes. Evolving plans, papercuts, decisions, and open questions live in
-[NOTES.md](NOTES.md).
+[NOTES.md](NOTES.md); the ordered work list is [TODO.md](TODO.md).
+
+## Parser API
+
+`parse_profile(&str)` and `parse_reader(impl BufRead)` return owned profiles
+with interned names, qualified function identities, per-part metadata and event
+layouts, self costs, calls, and jumps. `Decoder<BufRead>` emits the same semantic
+records incrementally for consumers that do not need to retain every row.
+The decoder and collector share one parser. Analysis indexes and pprof
+conversion are separate consumers of this model.
