@@ -103,7 +103,9 @@ Read `crates/callgrind-annotate/README.md` before changing its policies.
 Keep rendering barebones like the original: aligned text, no colors or TUI.
 Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
 limits, and validation evidence. The Callgrind/KCachegrind source audit is in
-`docs/SOURCE-AUDIT.md`; the 12-profile parsing gate and shared analysis are next.
+`docs/SOURCE-AUDIT.md`. The 12-profile native parsing gate is implemented;
+CI/Nix validation, then the pprof converter, are next. Use `docs/HANDOFF.md`
+for the current recovery and implementation contract.
 The durable same-file harness is in `tests/reference/README.md`. Do not claim
 complete format/frontend conformance from passing unit tests. Annotator
 comparisons explicitly use source grouping, normalize display-only differences,

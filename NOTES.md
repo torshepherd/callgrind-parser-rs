@@ -6,6 +6,29 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: current handoff clarified for a fresh Work session
+
+- Confirmed remote master is `d0791129da7c606789193310c66ff4d1978b09f1`;
+  the annotate push completed. No GitHub Actions workflow files exist there.
+- The old handoff accumulated mutually stale instructions: its upper section
+  said annotate was complete, while lower sections still called it a stub and
+  directed reconstruction of missing harness files. Replaced it with one current
+  entry point. Historical audit/checkpoint evidence remains in its own docs and
+  the prior handoff is retained in Git history.
+- Ordered the next work explicitly: CI plus real Nix validation; exclusive-cost
+  pprof converter with independent validation; shared UI analysis/frontends.
+  Added commands, actual CI completion criteria, Nix packaging assumptions,
+  converter schema/units/location/range/conservation decisions and test scope.
+- Clarified that Nix smoke currently runs parser/Perl annotation checks, not
+  the Qt/KCachegrind harness. The pprof dependency test uses a toy SmokeMessage,
+  not profile.proto. These are easy traps for a fresh session.
+- Recorded Work-mode recovery constraints: no dependence on old scratch paths
+  or a user CLI, preserve Git file modes and remote ancestry, and inspect
+  GitHub Actions results via the connection if shell execution disappears.
+- This is a documentation-only clarification. No new implementation, Rust/native
+  test pass, workflow run, Nix pass or pprof functionality is claimed.
+
+
 ### 2026-09-15: plain-text annotator implemented and validated
 
 - Harness milestone is on remote `master`: `21df9e979464b07785f95553210eb1ad939a7510`.
