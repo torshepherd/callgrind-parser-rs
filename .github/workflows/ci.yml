@@ -55,3 +55,58 @@ jobs:
 
       - name: Test the Python reference comparators
         run: python3 -m unittest discover -s tests/reference -v
+
+  integration:
+    name: Callgrind integration (${{ matrix.workload }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        workload: [sqlite]
+    env:
+      WORKLOAD: ${{ matrix.workload }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          enable_kvm: false
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Generate and retain the pinned workload profiles
+        run: |
+          mkdir -p results/profiles
+          ./scripts/nix.sh build ".#profiles-${WORKLOAD}" -L \
+            --out-link "$RUNNER_TEMP/callgrind-profiles-${WORKLOAD}" 2>&1 | tee results/profiles-build.log
+          cp -RL "$RUNNER_TEMP/callgrind-profiles-${WORKLOAD}/." results/profiles/
+
+      - name: Compare Rust and legacy annotators on the same profiles
+        run: |
+          ./scripts/nix.sh run -L ".#integration-${WORKLOAD}" \
+            -- "$PWD/results/checked" 2>&1 | tee results/comparison.log
+
+      - name: Verify the sandboxed smoke derivation
+        run: |
+          ./scripts/nix.sh build ".#smoke-${WORKLOAD}" --no-link -L 2>&1 | tee results/smoke.log
+
+      - name: Check the complete flake
+        if: matrix.workload == 'sqlite'
+        run: ./scripts/nix.sh flake check -L 2>&1 | tee results/flake-check.log
+
+      - name: Upload profiles, both reports and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: callgrind-${{ matrix.workload }}-${{ github.run_attempt }}
+          path: results/
+          retention-days: 7
+          if-no-files-found: warn

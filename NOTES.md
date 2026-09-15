@@ -6,6 +6,37 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: extensible SQLite integration CI implementation
+
+- User authorized the SQLite/legacy-annotator CI slice and requested an easy
+  path to workloads such as profiling Clang. Retained the existing Python
+  comparison harness; an eventual Rust migration remains deferred.
+- Added `workload/default.nix` registry and a generic JSON plan runner. Plans
+  declare executable/argument arrays, stdin, named variants, selected Callgrind
+  configurations and process timeouts. Every case gets a private working
+  directory; no shell parsing of workload argv. No Clang workload is claimed.
+- Preserved all six SQLite configurations at both 64/4096-page cache sizes:
+  12 profiles and the existing 87 same-file annotator comparisons. Moved flags
+  to one shared configuration table. The SQLite Bash entry point delegates
+  to the generic runner. New manifests use `variant` instead of SQLite-specific
+  cache-page columns; old manifests remain readable. Output must now be empty.
+- Plan/manifest validation rejects wrong case sets, duplicate/missing rows and
+  disagreement with the independently supplied Nix plan. Added seven focused
+  tests for a non-SQLite command, argument/stdin fidelity, private output files,
+  failed workloads, malformed plans, and preserved annotator failure reports.
+- Nix separates raw profiles from Rust checks. CI first retains the corpus,
+  then the integration app writes both annotators' stdout/stderr/commands to
+  the artifact directory. It builds the same sandboxed smoke check and runs
+  flake check; both reuse the already-generated corpus. Artifacts/logs upload
+  on success or failure for seven days. Initial profile-build failure retains
+  build logs; partial failed Nix store outputs are not promised as artifacts.
+- Pinned install-nix-action v31.11.1 and upload-artifact v7.0.1 to verified full
+  commits. No Rust or nixpkgs/dependency pin changes. The current Work VM lacks
+  Nix/native profilers; actual Nix validation will use the configured CI runner.
+- Local bootstrap, formatting, Clippy, nextest and Cargo tests passed (136 Rust
+  tests); all 28 Python tests and Bash syntax checks pass. Native/Nix/Actions
+  results are pending, not inferred from those fast checks.
+
 ### 2026-09-15: fast CI and direct-push workflow
 
 - User requested fast tests first; the native SQLite/Valgrind/Nix CI job is

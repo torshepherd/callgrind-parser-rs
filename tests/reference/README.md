@@ -48,16 +48,21 @@ exec-ing wrapper) on PATH, then run from the repository root:
 ```bash
 export LC_ALL=C TZ=UTC
 mkdir -p .dev/reference
-matrix_dir=$(mktemp -d "$PWD/.dev/reference/sqlite-matrix.XXXXXX")
-sqlite3 "$matrix_dir/fixture.db" < workload/fixture.sql
-test "$(sqlite3 "$matrix_dir/fixture.db" 'PRAGMA integrity_check;')" = ok
-bash scripts/run-matrix.sh --fixture "$matrix_dir/fixture.db" \
+matrix_root=$(mktemp -d "$PWD/.dev/reference/sqlite-matrix.XXXXXX")
+matrix_dir="$matrix_root/profiles"
+sqlite3 "$matrix_root/fixture.db" < workload/fixture.sql
+test "$(sqlite3 "$matrix_root/fixture.db" 'PRAGMA integrity_check;')" = ok
+bash scripts/run-matrix.sh --fixture "$matrix_root/fixture.db" \
   --workload workload/workload.sql.in --out "$matrix_dir"
 python3 tests/reference/check_matrix.py "$matrix_dir" \
   --inspect target/debug/examples/inspect \
   --rust-export target/debug/examples/reference_export \
   --kcachegrind-export .dev/reference/kcachegrind-export
 ```
+
+The native command above now delegates to the generic plan-based runner.
+See [the workload guide](../../workload/README.md) for the Nix registry,
+non-SQLite commands, CI artifacts and manifest format.
 
 The validator requires the exact six cases at both page-cache sizes, all 12 raw
 profiles, 12 annotations with PROGRAM TOTALS, and 12 unique manifest entries
@@ -74,14 +79,14 @@ Duplicate rows are rejected before zero-only normalization. A zero-count edge
 with positive cost is never dropped. Counter changes and malformed data have
 negative tests. Missing names/`???` and line zero are normalized only here.
 
-## Observed reconstruction gate, 2026-09-15
+## Historical reconstruction gate, 2026-09-15
 
 The unchanged native matrix passed all parser totals checks and compared
 186,876 rows: T=12, F=9,996, E=20,382, L=156,486. All eight focused fixtures
 passed. The 17 Python tests and 98 Rust tests passed; formatting and Clippy
 passed. Counts are observations, not cross-host goldens.
 
-The Nix smoke derivation now installs Rust examples and invokes the same
+At that reconstruction checkpoint, the Nix smoke derivation installed Rust examples and invokes the same
 matrix validator plus Python tests. Its pinned install hook was inspected,
 but **Nix is unavailable here, so the Nix build/check is unverified**. Run
 `./scripts/nix.sh build .#smoke -L` and `./scripts/nix.sh flake check -L` on a
@@ -94,7 +99,7 @@ Nix-capable host. Native reference success is not a hermetic Nix pass.
 python3 tests/reference/check_annotate.py \
   --rust target/debug/callgrind-annotate \
   --reference /path/to/valgrind/bin/callgrind_annotate \
-  --matrix "$matrix_dir"
+  --matrix "$matrix_dir" --artifacts "$matrix_root/reports"
 ```
 
 Observed: **87 comparisons passed, 35,080 nonzero function rows**, including

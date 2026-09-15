@@ -34,54 +34,74 @@
         '';
       };
 
-      fixture = pkgs.runCommand "sqlite-callgrind-fixture.db" {
-        nativeBuildInputs = [ pkgs.sqlite ];
-      } ''
-        export LC_ALL=C
-        export TZ=UTC
-        sqlite3 "$out" < ${./workload/fixture.sql}
-        test "$(sqlite3 "$out" 'PRAGMA integrity_check;')" = "ok"
-      '';
-
-      smoke = pkgs.runCommand "sqlite-callgrind-smoke" {
-        nativeBuildInputs = with pkgs; [
-          bash
-          coreutils
-          gnugrep
-          gnused
-          sqlite
-          valgrind
-          python3
-        ];
-      } ''
-        export LC_ALL=C
-        export TZ=UTC
-
-        bash ${./scripts/run-matrix.sh} \
-          --fixture ${fixture} \
-          --workload ${./workload/workload.sql.in} \
-          --out "$out"
-
-        python3 -m unittest discover -s ${./tests/reference} -v
-        python3 ${./tests/reference}/check_matrix.py "$out" \
-          --inspect ${rustWorkspace}/libexec/inspect
-        python3 ${./tests/reference}/check_annotate.py \
-          --rust ${rustWorkspace}/bin/callgrind-annotate \
-          --reference ${pkgs.valgrind}/bin/callgrind_annotate \
-          --parser-fixtures ${./crates/callgrind-parser/tests/fixtures} \
-          --matrix "$out"
-      '';
+      workloads = import ./workload { inherit pkgs; };
+      integrations = pkgs.lib.mapAttrs (name: workload:
+        let
+          plan = pkgs.writeText "${name}-plan.json" (builtins.toJSON workload.plan);
+          profiles = pkgs.runCommand "callgrind-${name}-profiles" {
+            nativeBuildInputs = [ pkgs.python3 pkgs.valgrind ];
+          } ''
+            export LC_ALL=C TZ=UTC
+            python3 ${./tests/reference}/run_workload.py --plan ${plan} --out "$out"
+          '';
+          runner = pkgs.writeShellApplication {
+            name = "integration-${name}";
+            runtimeInputs = [ pkgs.coreutils pkgs.python3 ];
+            text = ''
+              export LC_ALL=C TZ=UTC
+              if [[ $# != 1 ]]; then
+                echo "Usage: integration-${name} EMPTY_OUTPUT_DIRECTORY" >&2
+                exit 2
+              fi
+              mkdir -p "$1"
+              output="$(realpath "$1")"
+              if [[ -n "$(ls -A "$output")" ]]; then
+                echo "Output directory must be empty: $output" >&2
+                exit 2
+              fi
+              cp -R ${profiles}/. "$output/"
+              chmod -R u+w "$output"
+              python3 -m unittest discover -s ${./tests/reference} -v
+              python3 ${./tests/reference}/check_matrix.py "$output" \
+                --plan ${plan} --inspect ${rustWorkspace}/libexec/inspect
+              python3 ${./tests/reference}/check_annotate.py \
+                --rust ${rustWorkspace}/bin/callgrind-annotate \
+                --reference ${pkgs.valgrind}/bin/callgrind_annotate \
+                --parser-fixtures ${./crates/callgrind-parser/tests/fixtures} \
+                --matrix "$output" --plan ${plan} --artifacts "$output/comparisons"
+            '';
+          };
+          smoke = pkgs.runCommand "callgrind-${name}-integration" {} ''
+            ${runner}/bin/integration-${name} "$out"
+          '';
+        in { inherit plan profiles runner smoke; }
+      ) workloads;
+      namedPackages = pkgs.lib.foldlAttrs (acc: name: suite: acc // {
+        "profiles-${name}" = suite.profiles;
+        "smoke-${name}" = suite.smoke;
+        "integration-${name}" = suite.runner;
+      }) {} integrations;
     in
     {
       packages.${system} = {
-        inherit fixture rustWorkspace smoke;
+        inherit rustWorkspace;
+        fixture = workloads.sqlite.fixture;
+        smoke = integrations.sqlite.smoke;
         default = rustWorkspace;
-      };
+      } // namedPackages;
+
+      apps.${system} = pkgs.lib.mapAttrs' (name: suite:
+        pkgs.lib.nameValuePair "integration-${name}" {
+          type = "app";
+          program = "${suite.runner}/bin/integration-${name}";
+        }
+      ) integrations;
 
       checks.${system} = {
         rust-workspace = rustWorkspace;
-        inherit smoke;
-      };
+      } // pkgs.lib.mapAttrs' (name: suite:
+        pkgs.lib.nameValuePair "smoke-${name}" suite.smoke
+      ) integrations;
 
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [

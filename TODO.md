@@ -6,10 +6,11 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
-- [ ] **Add native CI and verify Nix.** Deferred to the next slice by the user.
-  Add a separate Nix-capable x86_64 integration job, run the existing smoke and
-  flake checks, fix actual failures, retain useful CI artifacts, and record a
-  completed successful run. The Nix closure remains unverified.
+- [ ] **Verify native CI and Nix.** The workload registry, generic runner and
+  separate SQLite CI job are implemented. Run the actual Actions job, fix any
+  Nix/annotation failures and record success before checking this off. The job
+  retains profiles, both reports and logs; raw profiling is reused by the app
+  and sandboxed smoke gate. See `workload/README.md` for future workloads.
   The handoff lists exact commands, install/import assumptions and acceptance
   criteria. KCachegrind/Qt is a separate gate, not currently part of Nix smoke.
 - [ ] **Implement the first callgrind2pprof converter.** Export exact exclusive

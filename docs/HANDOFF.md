@@ -36,7 +36,7 @@ not the current missing-work list.
 | Annotator differential | 87 same-file comparisons passed; 35,080 nonzero function rows, plus totals and call trees |
 | Nix | Wiring exists; smoke build and flake check have **not** been run in this environment |
 | Fast CI | `e295555053617ad715aee2879475a378154131ed`: [push run #1](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723) completed successfully; every step green |
-| Native CI | Deferred to the next slice; no integration workflow yet |
+| Native CI | Workload registry and SQLite integration job added; first actual Nix/Actions run pending |
 | Other frontends | `callgrind2pprof`, `textgrind`, `webgrind` remain stubs |
 
 Rust/Python gates were rerun locally from a clean bootstrap and passed, then
@@ -78,6 +78,18 @@ server is not evidence that remote work was lost. Do not claim a new test pass
 unless a new test actually ran.
 
 ## Next task 1: GitHub Actions and Nix
+
+**Current integration implementation (2026-09-15):** user authorized adding
+SQLite now and making workloads extensible. `workload/default.nix` is the
+registry; `workload/README.md` documents the plan schema and future Clang shape.
+The shared runner preserves SQLite's 12 cases. Nix builds a reusable raw corpus,
+then the integration app and smoke derivation both check the exact same bytes.
+CI keeps the corpus before compiling Rust and saves both annotators' reports
+and logs in writable outputs, including comparison failures. The new job and
+complete Nix wiring still need an actual green run before marking them verified.
+Local Rust gates and 28 Python tests passed; Nix is absent in this Work VM.
+No production Rust behavior or software lockfile pins changed in this slice.
+
 
 **Fast slice complete:** workflow commit `e295555053617ad715aee2879475a378154131ed`
 triggered [run 34962686723](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723)

@@ -37,7 +37,9 @@ The normal development loop is a direct push to the verified default branch
 the actual remote ancestry, then inspect the push-triggered CI run for that
 commit. Fix failures promptly or add a `git revert` commit; do not rewrite
 shared history. Optional PRs and manual CI runs remain available. Fast CI
-covers Rust/Python checks only; the native integration job is still pending.
+covers Rust/Python checks; a separate Nix integration job covers registered
+workloads. Read `workload/README.md` before extending it. Record the actual
+completed native CI run before claiming that gate is verified.
 
 Nix is optional for daily Rust work and owns the separate pinned SQLite/
 Valgrind integration environment. `.codex/setup.sh` no longer installs Nix.
@@ -94,9 +96,11 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 - Differential tests must feed the Rust implementation and Valgrind reference
   tools the exact same raw profile. Do not use absolute event totals as golden
   values across different x86_64 hosts.
-- The integration matrix must continue to validate 12 raw Callgrind profiles
+- The SQLite integration matrix must continue to validate 12 raw profiles
   and 12 reference annotations unless an intentional test-design change is
-  documented in `NOTES.md`.
+  documented in `NOTES.md`. New workloads declare their own exact variant/
+  configuration cross-product in `workload/default.nix`; reuse the shared runner
+  and comparator. CI must retain same-file reports and failure diagnostics.
 - Do not commit `.dev/`, `target/`, `result`, `results/`, generated Callgrind profiles,
   or other local build output.
 - Update `NOTES.md` when a decision is made, a new papercut is discovered, or

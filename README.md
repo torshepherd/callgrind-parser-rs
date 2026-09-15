@@ -111,8 +111,9 @@ locked, offline Cargo dependencies. CI reports failures after a direct push;
 it does not prevent that commit from reaching the branch or automatically
 roll it back.
 
-Native SQLite/Valgrind comparisons and Nix checks are the next separate CI
-job. Passing the fast checks does not establish native integration parity.
+A separate Nix job profiles SQLite, validates all 12 raw profiles, compares
+both annotators and retains reports/logs as CI artifacts. Passing the fast
+checks alone does not establish native integration parity.
 
 ### Native integration
 
@@ -121,8 +122,10 @@ installed, run `./scripts/nix.sh build .#smoke -L` for the profiling matrix or
 `./scripts/nix.sh flake check -L` for the Nix Rust build plus that matrix.
 The integration smoke test builds a deterministic SQLite fixture, runs a
 representative workload through a matrix of Callgrind options, and validates
-the resulting profiles with Valgrind's `callgrind_annotate`. See
-[SMOKE-TEST.md](SMOKE-TEST.md) for the matrix and manual commands.
+the resulting profiles with the production Rust parser and both the Rust and
+legacy annotators. See [workload/README.md](workload/README.md) for commands,
+artifact contents and how to add another program such as Clang.
+[SMOKE-TEST.md](SMOKE-TEST.md) records historical producer-only evidence.
 
 Contributors and coding agents should read [AGENTS.md](AGENTS.md) before making
 changes. Evolving plans, papercuts, decisions, and open questions live in
