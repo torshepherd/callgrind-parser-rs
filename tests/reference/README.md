@@ -86,11 +86,9 @@ The unchanged native matrix passed all parser totals checks and compared
 passed. The 17 Python tests and 98 Rust tests passed; formatting and Clippy
 passed. Counts are observations, not cross-host goldens.
 
-At that reconstruction checkpoint, the Nix smoke derivation installed Rust examples and invokes the same
-matrix validator plus Python tests. Its pinned install hook was inspected,
-but **Nix is unavailable here, so the Nix build/check is unverified**. Run
-`./scripts/nix.sh build .#smoke -L` and `./scripts/nix.sh flake check -L` on a
-Nix-capable host. Native reference success is not a hermetic Nix pass.
+At that reconstruction checkpoint, Nix wiring had only been inspected. See
+the current CI result in [SMOKE-TEST.md](../../SMOKE-TEST.md); historical native
+reference success is a separate gate from a hermetic Nix pass.
 
 ## Rust annotator differential checks
 
@@ -102,10 +100,11 @@ python3 tests/reference/check_annotate.py \
   --matrix "$matrix_dir" --artifacts "$matrix_root/reports"
 ```
 
-Observed: **87 comparisons passed, 35,080 nonzero function rows**, including
-all 12 SQLite profiles, default/self/inclusive modes, show/sort/threshold
-options and direct call trees. The Python suite now has 21 passing tests;
-the complete Rust suite has 136. Nix smoke includes this gate too (unverified).
+At the initial annotator checkpoint, **87 comparisons passed, 35,080 nonzero
+function rows**, including all 12 SQLite profiles, default/self/inclusive
+modes, show/sort/threshold
+options and direct call trees. That checkpoint had 21 Python tests and 136
+Rust tests. The collision regression below extends the comparison coverage.
 
 This compares semantic text tables, not byte-identical output. Rust uses the
 explicit `--grouping=source` view to match inline attribution. Object decoration
@@ -131,5 +130,12 @@ The comparator now projects those rows explicitly into Perl's granularity,
 without changing either CLI or raw profile. `object-collision.callgrind` and
 negative tests cover exact sums, row order, call counts and edge attachment.
 On the recovered CI corpus, all **93** annotation comparisons pass locally
-(39,597 nonzero function rows). Python tests: **31**. A rerun of the complete
-Actions/Nix gate is pending; these local comparisons are not that gate.
+(39,597 nonzero function rows). Python tests: **31**.
+
+The full rerun subsequently **passed** at commit `7a5daa76`:
+[Actions run 34999337875](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875).
+Both the writable app and sandboxed smoke passed those 93 comparisons on the
+newly generated Nix corpus, again observing 39,597 nonzero rows. Production
+`inspect` validated all 12 self totals, the Rust package passed its 136 tests,
+and complete flake check passed. Both CI jobs and artifact upload were green.
+See [SMOKE-TEST.md](../../SMOKE-TEST.md); this does not run KCachegrind/Qt.

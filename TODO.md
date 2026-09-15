@@ -6,13 +6,6 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
-- [ ] **Verify native CI and Nix.** The workload registry, generic runner and
-  separate SQLite CI job are implemented. Run the actual Actions job, fix any
-  Nix/annotation failures and record success before checking this off. The job
-  retains profiles, both reports and logs; raw profiling is reused by the app
-  and sandboxed smoke gate. See `workload/README.md` for future workloads.
-  The handoff lists exact commands, install/import assumptions and acceptance
-  criteria. KCachegrind/Qt is a separate gate, not currently part of Nix smoke.
 - [ ] **Implement the first callgrind2pprof converter.** Export exact exclusive
   costs from a selected part using the real pprof schema, checked signed-range
   conversion and deterministic gzip/Prost output. Document event units and
@@ -28,10 +21,16 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Completed milestones
 
+- [x] Extensible SQLite CI and full Nix validation, commit `7a5daa76`:
+  [both jobs green](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875).
+  All 12 profiles validated; 93 same-file annotation comparisons passed in
+  both the app and sandboxed smoke; complete flake check passed. Profiles,
+  both reports and logs uploaded. New workloads reuse the registry and runner;
+  see `workload/README.md`. KCachegrind/Qt remains a separate native gate.
+
 - [x] Fast Rust/Python CI, committed as `e295555`: all checks completed green in
   [push run #1](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723).
   Direct pushes to `master` trigger it automatically; PRs remain optional.
-  This does not establish a native/Nix integration pass.
 - [x] Callgrind/KCachegrind source audit and parser regressions:
   [docs/SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md).
 - [x] Durable SQLite/reference harness, committed as `21df9e9`: all 12 profiles
@@ -41,7 +40,7 @@ harness and plain-text annotator are committed; implementation baseline is
   call trees and source annotation; 87 same-file semantic comparisons passed.
   Boundaries: [annotator README](crates/callgrind-annotate/README.md).
 - [x] Latest observed complete Rust gates: 136 tests, formatting and Clippy;
-  Python suite: 21 tests. Native source-pinned results are not a Nix pass.
+  Python suite: 31 tests. The current native/Nix result is recorded above.
 
 ## Deferred extensions
 

@@ -6,6 +6,40 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: SQLite CI and Nix verified end to end
+
+- Commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b`,
+  [push run 34999337875](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875):
+  both jobs completed successfully, every step green. Fast CI passed bootstrap,
+  formatting, Clippy, 136 nextest tests, Cargo tests/doctests and 31 Python tests.
+- Nix generated all 12 profiles, built and tested the workspace (136 tests plus
+  doctests), correctly installed both libexec examples, and passed the 31 Python
+  tests and production-parser self totals. The writable app and sandboxed smoke
+  each passed 93 same-file comparisons (39,597 nonzero function rows). Complete
+  flake check passed, reusing those already-built check derivations.
+- Artifact `10408578854`, `callgrind-sqlite-1`, uploaded successfully (7,147,308
+  bytes, seven-day retention). It contains raw profiles, both CLI reports and
+  commands, producer diagnostics and build/comparison/smoke/flake logs.
+- This establishes the current Nix toolchain, Rust example install hook, Python
+  fixture/import paths and declared runtime closure by actual execution. Nix
+  printed a non-failing app `meta` warning. KCachegrind/Qt and source-output byte
+  parity remain outside this CI gate. Clang remains a documented future example.
+- Updated HANDOFF, TODO, AGENTS and SMOKE-TEST to make the exclusive-cost pprof
+  converter the next implementation task. The user keeps direct pushes and
+  accepts the Python harness until a later Rust migration.
+
+### 2026-09-15: publication tree restored before verification
+
+- The comparator publication `745bb628` accidentally omitted the unchanged
+  files: the tree API received no effective base tree. This also omitted the
+  workflow, so no CI run started. The complete local checkout was unaffected.
+- Restored the full prior integration tree plus the eight intended changed
+  files in follow-up commit `7a5daa76`, preserving both commits and all remote
+  ancestry. Compared all 85 tracked paths, blob IDs and modes with the intended
+  local snapshot before the non-forced ref update. CI then started normally.
+- Publication must assert a nonempty actual base tree and verify the complete
+  prospective tree, not only the changed files. Recorded this in AGENTS.md.
+
 ### 2026-09-15: first integration run found cross-object display collisions
 
 - Commit `bd31bdf7`, Actions run `34965651354`: fast job green; Nix installed,
@@ -29,8 +63,9 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 - Added a minimal two-object collision profile and negative sum/order/count/
   endpoint tests. All 93 comparisons on the recovered 12-case CI corpus plus
   three fixtures pass locally (39,597 nonzero rows); 31 Python tests pass.
-  Full CI/Nix rerun pending. Raw object identity is still covered independently
-  by Rust tests and the native libcore harness, not claimed by this projection.
+  The full CI/Nix rerun passed; see the newer entry above. Raw object identity
+  is still covered independently by Rust tests and the native libcore harness,
+  not claimed by this projection.
 - Papercuts: active job-log downloads return BlobNotFound until job completion.
   Artifact download succeeded through the GitHub connection; Python urllib's
   default client received HTTP 403/1010 at the returned file URL, while ordinary

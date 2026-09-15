@@ -1,4 +1,46 @@
-# Verified smoke-test result
+# Verified smoke-test results
+
+## Current integration gate, 2026-09-15
+
+Commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b` passed
+[Actions run 34999337875](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875) on Ubuntu 24.04 x86_64.
+Both jobs and every step completed successfully. Nix's software pins remain
+SQLite 3.51.2, Valgrind 3.26.0 and nixpkgs
+`a5cc6f2c37bf518436dc8d1c288ccd0c43c2f4c4`.
+
+| Gate | Observed result |
+| --- | --- |
+| Fast CI | Fresh pinned bootstrap, formatting, Clippy, 136 nextest tests, Cargo tests/doctests, 31 Python tests passed |
+| Nix Rust package | Workspace build, 136 tests, doctests and installed example binaries passed |
+| SQLite profiles | Two cache variants times six configurations; 12 profiles, 12 legacy annotations and exact manifest validated |
+| Production parser | All 12 profile self totals validated with installed `inspect` |
+| Annotator differential | 93 comparisons and 39,597 nonzero function rows passed in both the integration app and sandboxed smoke |
+| Full flake | All outputs evaluated and checks passed, reusing the built Rust and smoke derivations |
+| Artifacts | `callgrind-sqlite-1`, ID `10408578854`, uploaded successfully; seven-day retention |
+
+The run executed these entry points:
+
+```console
+./scripts/nix.sh build .#profiles-sqlite -L
+./scripts/nix.sh run -L .#integration-sqlite -- "$PWD/results/checked"
+./scripts/nix.sh build .#smoke-sqlite --no-link -L
+./scripts/nix.sh flake check -L
+```
+
+Both annotators consume the exact same raw bytes. Comparisons check event
+order, totals, nonzero function order/costs and call-tree endpoints/counts/costs,
+using the documented source grouping and legacy object projection. The 93
+runs include 72 SQLite option combinations and 21 focused-fixture comparisons.
+Whitespace/percentage display and tree tie order are normalized. Full source
+output, object attribution parity in Perl's merged view and KCachegrind/Qt are
+outside this gate. Counts are observations, not cross-host goldens.
+
+The first integration attempt exposed loader/libc display-name collisions in
+the comparator; the fixed comparator passed the recovered corpus locally and
+then this freshly generated CI corpus. See `NOTES.md` for the diagnosis and
+[workload/README.md](workload/README.md) for commands and adding workloads.
+
+## Historical producer-only gate, 2026-09-04
 
 The complete flake was built and checked on 2026-09-04 in a fresh x86_64
 ChatGPT Linux VM:
