@@ -1,0 +1,19 @@
+# callgrind format
+version: 1
+events: Ir
+ob=/app
+fl=/main.c
+fn=main
+1 2
+fi=/inline.h
+10 3
+cfl=/other.c
+cfn=other
+calls=1 20
+11 7
+fe=/main.c
+2 5
+fl=/other.c
+fn=other
+20 7
+totals: 17

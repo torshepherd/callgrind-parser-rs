@@ -1,0 +1,13 @@
+[package]
+name = "callgrind2pprof"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Convert Callgrind profiles to pprof"
+
+[dependencies]
+callgrind-parser.workspace = true
+clap.workspace = true
+flate2.workspace = true
+prost.workspace = true

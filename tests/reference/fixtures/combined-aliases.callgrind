@@ -1,0 +1,14 @@
+# callgrind format
+version: 1
+part: 1
+events: Ir
+fl=(1) /main.c
+fn=(1) main
+1 2
+totals: 2
+part: 2
+events: Ir
+fl=(1)
+fn=(1)
+1 3
+totals: 3
