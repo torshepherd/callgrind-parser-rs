@@ -31,7 +31,13 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
   Formatting, Clippy, nextest and Cargo tests all passed (136 Rust tests,
   none ignored); Python unittest passed all 21 tests. Workflow YAML parses
   and `git diff --check` is clean. No native or Nix checks run in this slice.
-  First published Actions run is still pending; local results are not CI proof.
+- Published workflow and docs as `e295555053617ad715aee2879475a378154131ed`
+  using parent `dd1945e5` and a non-forced update to `master`. The push triggered
+  [Actions run 34962686723](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723),
+  which completed **successfully**. All steps in job `104359769092` are green,
+  including clean bootstrap, formatting, Clippy, nextest, Cargo and Python tests.
+  This establishes the fast CI gate and automatic direct-push trigger. Native
+  integration remains deferred; no Nix or KCachegrind CI pass is claimed.
 - Recovery: shell Git lacks authentication, so all 78 source blobs were read
   through the authorized GitHub connection at `dd1945e5`, verified against
   blob IDs, and materialized with recorded file modes. Local Git is only an

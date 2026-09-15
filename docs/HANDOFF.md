@@ -9,8 +9,8 @@ The parser, durable reference harness and plain-text annotator are implemented.
 **Do not reconstruct the harness or treat the annotator as a stub.**
 The next sequence is:
 
-1. Verify the fast GitHub Actions job, then add native CI and get the existing
-   Nix checks passing. The user requested fast tests first on 2026-09-15.
+1. Add native CI and get the existing Nix checks passing. Fast Rust/Python CI
+   is verified green; the user requested fast tests first on 2026-09-15.
 2. Implement the first exclusive-cost `callgrind2pprof` converter.
 3. Build shared analysis for `textgrind` and `webgrind`.
 
@@ -35,13 +35,15 @@ not the current missing-work list.
 | Focused native reference fixtures | Eight passed their scoped agreement or exact expected-difference checks |
 | Annotator differential | 87 same-file comparisons passed; 35,080 nonzero function rows, plus totals and call trees |
 | Nix | Wiring exists; smoke build and flake check have **not** been run in this environment |
-| Fast CI | `.github/workflows/ci.yml` added; first published Actions run pending |
+| Fast CI | `e295555053617ad715aee2879475a378154131ed`: [push run #1](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723) completed successfully; every step green |
 | Native CI | Deferred to the next slice; no integration workflow yet |
 | Other frontends | `callgrind2pprof`, `textgrind`, `webgrind` remain stubs |
 
-These are results observed before the implementation was pushed, not fresh
-test executions by this documentation update. Do not use the native counts or
-instruction totals as cross-host goldens. Compare consumers of identical bytes.
+Rust/Python gates were rerun locally from a clean bootstrap and passed, then
+the fast workflow completed successfully on GitHub's Ubuntu 24.04 runner.
+The native rows above remain prior-session evidence; native/Nix checks were
+not rerun in the fast-CI slice. Do not use native counts or instruction totals
+as cross-host goldens. Compare consumers of identical bytes.
 
 The parser is established for its documented supported dialect; it is not
 complete for every legacy/extended dialect. The audit lists explicit rejections.
@@ -77,6 +79,13 @@ unless a new test actually ran.
 
 ## Next task 1: GitHub Actions and Nix
 
+**Fast slice complete:** workflow commit `e295555053617ad715aee2879475a378154131ed`
+triggered [run 34962686723](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723)
+on a direct push to `master`. The run completed successfully with bootstrap,
+formatting, Clippy, nextest, Cargo tests and Python comparator tests all green.
+Native integration is still pending. The user accepts Python for now and
+prefers eventually porting the comparison harness/tests to Rust; see TODO.md.
+
 The user explicitly narrowed the first slice to fast tests. Keep direct pushes
 to the verified default branch (`master`); PRs are optional. The fast workflow
 also accepts `main` if renamed later, optional PRs and `workflow_dispatch`.
@@ -85,7 +94,7 @@ a rollback. No branch-protection changes or automatic rollback are required.
 
 The fast workflow uses the repository bootstrap without caching, declares host
 build tools/Python, and pins checkout v7.0.1 by its verified full commit SHA.
-Do not mark CI verified until an Actions run actually completes successfully.
+Preserve the observed run evidence above when updating CI status.
 Native integration is the next separate slice, using the existing harness.
 
 Keep two clearly separated checks:

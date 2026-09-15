@@ -6,10 +6,6 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
-- [ ] **Verify fast CI.** `.github/workflows/ci.yml` runs the existing Rust and
-  Python checks on default-branch pushes, optional PRs and manual runs.
-  Record a completed successful Actions run for the published commit before
-  marking this gate complete. Direct pushes remain the normal workflow.
 - [ ] **Add native CI and verify Nix.** Deferred to the next slice by the user.
   Add a separate Nix-capable x86_64 integration job, run the existing smoke and
   flake checks, fix actual failures, retain useful CI artifacts, and record a
@@ -31,6 +27,10 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Completed milestones
 
+- [x] Fast Rust/Python CI, committed as `e295555`: all checks completed green in
+  [push run #1](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34962686723).
+  Direct pushes to `master` trigger it automatically; PRs remain optional.
+  This does not establish a native/Nix integration pass.
 - [x] Callgrind/KCachegrind source audit and parser regressions:
   [docs/SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md).
 - [x] Durable SQLite/reference harness, committed as `21df9e9`: all 12 profiles
