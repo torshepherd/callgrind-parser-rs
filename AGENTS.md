@@ -32,6 +32,13 @@ through the authorized GitHub connection if shell Git authentication is absent;
 do not extract connector credentials. Preserve remote history and concurrent
 changes. Never force-push. Commit source, lockfiles, and handoff notes to Git.
 
+The normal development loop is a direct push to the verified default branch
+(currently `master`), not a required PR. Run local gates first, publish using
+the actual remote ancestry, then inspect the push-triggered CI run for that
+commit. Fix failures promptly or add a `git revert` commit; do not rewrite
+shared history. Optional PRs and manual CI runs remain available. Fast CI
+covers Rust/Python checks only; the native integration job is still pending.
+
 Nix is optional for daily Rust work and owns the separate pinned SQLite/
 Valgrind integration environment. `.codex/setup.sh` no longer installs Nix.
 Use an existing Nix installation or a suitably configured CI runner for it.
@@ -45,6 +52,7 @@ Run from the repository root:
 - Cargo tests (also covers doctests): `./scripts/cargo.sh test --workspace --locked --offline`
 - Formatting: `./scripts/cargo.sh fmt --all --check`
 - Lints: `./scripts/cargo.sh clippy --workspace --all-targets --all-features --locked --offline -- -D warnings`
+- Comparator unit tests: `python3 -m unittest discover -s tests/reference -v`
 - Callgrind integration matrix: `./scripts/nix.sh build .#smoke -L`
 - Complete hermetic check: `./scripts/nix.sh flake check -L`
 

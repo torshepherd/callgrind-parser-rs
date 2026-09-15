@@ -6,11 +6,14 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
-- [ ] **Add CI and verify Nix.** Separate fast Rust/Python checks from a
-  Nix-capable x86_64 integration job. Run the existing smoke and flake checks,
-  fix actual failures, retain useful CI artifacts, and record a completed
-  successful run for the relevant commit. No workflow files exist at the
-  baseline. The Nix closure is unverified; creating YAML is not verification.
+- [ ] **Verify fast CI.** `.github/workflows/ci.yml` runs the existing Rust and
+  Python checks on default-branch pushes, optional PRs and manual runs.
+  Record a completed successful Actions run for the published commit before
+  marking this gate complete. Direct pushes remain the normal workflow.
+- [ ] **Add native CI and verify Nix.** Deferred to the next slice by the user.
+  Add a separate Nix-capable x86_64 integration job, run the existing smoke and
+  flake checks, fix actual failures, retain useful CI artifacts, and record a
+  completed successful run. The Nix closure remains unverified.
   The handoff lists exact commands, install/import assumptions and acceptance
   criteria. KCachegrind/Qt is a separate gate, not currently part of Nix smoke.
 - [ ] **Implement the first callgrind2pprof converter.** Export exact exclusive
@@ -41,6 +44,9 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Deferred extensions
 
+- [ ] Port the Python reference comparison harness and its tests to Rust.
+  User prefers an all-Rust project eventually; Python is accepted for now.
+  Preserve same-file comparisons and all existing failure/normalization checks.
 - [ ] Annotator derived events, full source-output differential goldens,
   optional cycle-aware views and multipart aggregation, when needed.
 - [ ] Decide extended parser dialect scope: nested mangled compression,

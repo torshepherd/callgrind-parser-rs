@@ -6,6 +6,39 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: fast CI and direct-push workflow
+
+- User requested fast tests first; the native SQLite/Valgrind/Nix CI job is
+  explicitly deferred to the next slice. The parser, annotator and durable
+  comparison harness remain implemented; no production-code changes here.
+- Added `.github/workflows/ci.yml`: Ubuntu 24.04 x86_64, explicit host tools,
+  repository-pinned bootstrap, formatting, Clippy with warnings denied, nextest,
+  Cargo tests including doctests, and the existing 21 Python comparator tests.
+  Python is existing test-harness code, not a new parser/CLI dependency.
+- User accepts the existing Python harness for now but prefers migrating it
+  and its tests to Rust eventually. Added a deferred TODO; do not expand this
+  fast-CI slice into a harness rewrite or lose its differential coverage.
+- Push triggers cover `master` (verified default) and `main` if renamed later;
+  optional PR and manual triggers also exist. Direct pushes remain the normal
+  workflow. Run local checks, push, inspect the exact commit's CI result, then
+  fix or add a revert commit if needed. Never force-push shared history.
+- Checkout v7.0.1 is pinned to verified commit
+  `3d3c42e5aac5ba805825da76410c181273ba90b1`, with credentials not persisted and
+  read-only contents permission. Superseded runs on the same ref are cancelled.
+  No cache initially: each run exercises clean setup; cache optimization can
+  follow measured need. Existing Rust/nextest/dependency pins are unchanged.
+- Fresh local bootstrap succeeded from an empty tool/dependency directory.
+  Formatting, Clippy, nextest and Cargo tests all passed (136 Rust tests,
+  none ignored); Python unittest passed all 21 tests. Workflow YAML parses
+  and `git diff --check` is clean. No native or Nix checks run in this slice.
+  First published Actions run is still pending; local results are not CI proof.
+- Recovery: shell Git lacks authentication, so all 78 source blobs were read
+  through the authorized GitHub connection at `dd1945e5`, verified against
+  blob IDs, and materialized with recorded file modes. Local Git is only an
+  inspection snapshot. Publication must use remote ancestry and a non-forced
+  update. The commit-workflow-runs helper filters to PR runs; use the repository
+  runs endpoint with `head_sha` and `event=push` for the direct-push workflow.
+
 ### 2026-09-15: current handoff clarified for a fresh Work session
 
 - Confirmed remote master is `d0791129da7c606789193310c66ff4d1978b09f1`;

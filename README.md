@@ -93,6 +93,29 @@ not automatically run merely because a chat opens; the agent runs it after
 reading `AGENTS.md`. Git is the durable source of truth, not `.dev/` or `target/`.
 Other platforms can use their own rustup installation with `rust-toolchain.toml`.
 
+### Continuous integration and direct pushes
+
+[CI](https://github.com/torshepherd/callgrind-parser-rs/actions/workflows/ci.yml)
+runs on pushes to `master` (the current default branch) or `main`, on pull
+requests targeting either branch, and manually from the Actions tab. PRs are
+optional; the normal development loop is to run the checks in `AGENTS.md`,
+commit and push directly to the default branch, then inspect CI for that commit.
+If CI finds a regression, push a fix or use `git revert` to add a rollback
+commit. Preserve history; do not reset and force-push the shared branch.
+
+The Ubuntu job bootstraps the repository's pinned Rust tools from a fresh
+checkout and runs rustfmt, Clippy, nextest, Cargo tests (including doctests),
+and Python comparator unit tests. It currently uses no cache, so every run
+also checks that setup works from scratch. Test commands after setup use
+locked, offline Cargo dependencies. CI reports failures after a direct push;
+it does not prevent that commit from reaching the branch or automatically
+roll it back.
+
+Native SQLite/Valgrind comparisons and Nix checks are the next separate CI
+job. Passing the fast checks does not establish native integration parity.
+
+### Native integration
+
 Nix remains an **optional, separate integration environment**. With Nix
 installed, run `./scripts/nix.sh build .#smoke -L` for the profiling matrix or
 `./scripts/nix.sh flake check -L` for the Nix Rust build plus that matrix.

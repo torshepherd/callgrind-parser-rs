@@ -9,7 +9,8 @@ The parser, durable reference harness and plain-text annotator are implemented.
 **Do not reconstruct the harness or treat the annotator as a stub.**
 The next sequence is:
 
-1. Add GitHub Actions and get the existing Nix checks passing.
+1. Verify the fast GitHub Actions job, then add native CI and get the existing
+   Nix checks passing. The user requested fast tests first on 2026-09-15.
 2. Implement the first exclusive-cost `callgrind2pprof` converter.
 3. Build shared analysis for `textgrind` and `webgrind`.
 
@@ -34,7 +35,8 @@ not the current missing-work list.
 | Focused native reference fixtures | Eight passed their scoped agreement or exact expected-difference checks |
 | Annotator differential | 87 same-file comparisons passed; 35,080 nonzero function rows, plus totals and call trees |
 | Nix | Wiring exists; smoke build and flake check have **not** been run in this environment |
-| CI | No `.github/` workflow files at the verified baseline |
+| Fast CI | `.github/workflows/ci.yml` added; first published Actions run pending |
+| Native CI | Deferred to the next slice; no integration workflow yet |
 | Other frontends | `callgrind2pprof`, `textgrind`, `webgrind` remain stubs |
 
 These are results observed before the implementation was pushed, not fresh
@@ -75,7 +77,18 @@ unless a new test actually ran.
 
 ## Next task 1: GitHub Actions and Nix
 
-Implement two clearly separated checks:
+The user explicitly narrowed the first slice to fast tests. Keep direct pushes
+to the verified default branch (`master`); PRs are optional. The fast workflow
+also accepts `main` if renamed later, optional PRs and `workflow_dispatch`.
+Inspect CI after pushing; fix a failure or add a revert commit, never force-push
+a rollback. No branch-protection changes or automatic rollback are required.
+
+The fast workflow uses the repository bootstrap without caching, declares host
+build tools/Python, and pins checkout v7.0.1 by its verified full commit SHA.
+Do not mark CI verified until an Actions run actually completes successfully.
+Native integration is the next separate slice, using the existing harness.
+
+Keep two clearly separated checks:
 
 **Fast Rust/Python job:** on x86_64 Linux, run the repository bootstrap, then:
 
@@ -131,12 +144,16 @@ repository-scoped workflow permissions. If writing workflow files is rejected
 by the connector, report that exact capability limitation and preserve a
 reviewable draft; do not extract credentials or bypass the rejection.
 
-**Done means:** workflows are committed on the current branch, a run for the
-relevant commit has actually completed, both jobs are green, and NOTES/HANDOFF
-record the run/commit and scope. Creating YAML or dispatching a run alone is not
-a completed gate. Retrieve Actions status/logs through the GitHub connection if
-shell access disappears. If integration is blocked, record it distinctly from
-the Rust results; do not mark the unchecked gate complete.
+**Fast slice done means:** the workflow is committed on the default branch,
+its run for the relevant commit has completed successfully, and NOTES/HANDOFF
+record the run/commit and scope. Native integration can remain deferred for
+this slice. **Full CI/Nix task done means:** both jobs have completed green.
+Creating YAML or dispatching a run alone is not a completed gate. Retrieve
+Actions status/logs through the GitHub connection if shell access disappears.
+For push runs use the repository workflow-runs endpoint with `head_sha` and
+`event=push`; the connector's commit-workflow-runs helper currently filters to
+PR events and can miss the direct-push run. Record integration distinctly from
+Rust results; do not mark an unchecked gate complete.
 
 ## Next task 2: exclusive-cost pprof converter
 
