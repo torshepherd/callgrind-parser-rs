@@ -1,0 +1,42 @@
+{
+  "audit_date": "2026-09-15",
+  "repository": "https://github.com/google/pprof",
+  "commit": "6331bc6350fe55a6fec2957299e0581dd7510e36",
+  "archive_url": "https://codeload.github.com/google/pprof/tar.gz/6331bc6350fe55a6fec2957299e0581dd7510e36",
+  "archive_sha256": "ab04d71d3ba750fe102f1887c67428cc01b7a75fc3d21a3a8f145b19de327630",
+  "toolchain": {
+    "version": "go1.27.1",
+    "platform": "linux-amd64",
+    "archive_url": "https://go.dev/dl/go1.27.1.linux-amd64.tar.gz",
+    "archive_sha256": "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"
+  },
+  "upstream_modified": false,
+  "upstream_test_packages": [
+    "./internal/report",
+    "./internal/graph",
+    "./internal/driver",
+    "./profile"
+  ],
+  "probe_profiles": 12,
+  "probe_cli_invocations": 32,
+  "files": {
+    "go.mod": "6be06896978991201ca3456b3504133c9b245ab8c00541c1e76f053c61388274",
+    "go.sum": "cff6df9fbbad794ec70418c0e5a6fb64e9218b91093cb569aace1f504d47cb8c",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "proto/profile.proto": "f541a10a1e01bd885135cb2eba3a6f4cb073ad34872190e1150f772436859fbf",
+    "profile/profile.go": "69432b3b84dc6831f9933daf3794c2fbf3d5f8cfd94c0c6a2a397cd4df899fd6",
+    "profile/index.go": "5daf4730c8723fd74c8df35041e962fbfa8b95e350733b48a46881ed30e6ca36",
+    "internal/driver/commands.go": "2aba21a3bcd909332b62706d66e9d31106e94d2fa3068587d9a374f02eead4ab",
+    "internal/driver/driver.go": "e29031cca644e73ab1974582226d545e5c95b2c45cf0a0e37450166ac60ecd94",
+    "internal/driver/driver_focus.go": "e345b831fc9900035e142dbbff0fbc1d55e8f07ed20413529ece88d959a152ce",
+    "internal/driver/config.go": "6e050d420796659f3e80df44db8873863ba7701e393558100aa7e6d5a9dac51a",
+    "internal/driver/driver_test.go": "ef9a2e280d97807477768e179f1b0d9489d18aab96fc2e1a3b70c7d47f6c66e1",
+    "internal/report/report.go": "afedecaaa2154e06a661614c0c3df5911d65f70b65c4ff37210cd9321135d8ba",
+    "internal/report/report_test.go": "9189899a2064ff86afca08f211dfd8b9977137db40b4f2bd27f3e6484466a517",
+    "internal/graph/graph.go": "61ba6487bc9f103869b9a26544162ce1bce35b496fd6e82a03c8dc687e8f8fdd",
+    "internal/measurement/measurement.go": "ae3c7949393f3b9fc8c224542ddcbd14a9da07551cae191755c3ebc9dc3f3b73",
+    "internal/driver/testdata/pprof.cpu.callgrind": "602a142ad89ce1dc583ed642d0f20a4fd0d39ac8a53185d5789957c2fcb374b5",
+    "internal/driver/testdata/pprof.heap.callgrind": "0383e726caf7d527a4183ed7e1aac52624515e04c1e0816efd37b906ad0ab3ee",
+    "internal/driver/testdata/pprof.cpu.call_tree.callgrind": "947f01356d8acdea5e695d80751b20c9a63da1aea4108b53c7c676ff57578e90"
+  }
+}

@@ -6,6 +6,51 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: pprof Callgrind exporter audit and reverse-conversion boundary
+
+- User requested this source deep dive before implementing the converter.
+  Added `docs/PPROF-CALLGRIND-AUDIT.md`, immutable source links, archive/file
+  hashes in `docs/pprof-audit-sources.json`, and optional Go fixture/CLI probes
+  under `tests/reference/pprof-audit/`. Linked the existing audit and handoff;
+  did not implement `callgrind2pprof` or change production Rust semantics.
+- Pinned google/pprof `6331bc6350fe55a6fec2957299e0581dd7510e36`, built with
+  SHA-256-verified Go 1.27.1. Traced command overrides, sample selection, graph
+  and context-tree construction, recursion, flat/edge formatting, units and
+  the real protobuf schema/reader. Four upstream test packages passed without
+  source edits: report, graph, driver and profile.
+- Our 12 profiles and 32 CLI executions passed their focused assertions.
+  Two different full-stack populations produce exactly the same ordinary
+  Callgrind bytes, despite different pprof traces. This is a constructive
+  non-invertibility proof independent of recursion or numerical precision.
+  Pprof computes cumulative values from supplied stacks; flat-only samples
+  preserve self values but deliberately lose callers. Approximate allocation
+  remains a separately designed feature, not an implied exact inverse.
+- Exported edges all use `calls=0`; ordinary graph construction counts each
+  node/edge once per sample and suppresses identical-node recursive self edges.
+  Production Rust reads the basic output's self total as 100. Unmodified
+  Valgrind 3.26.0 Perl annotator calculates 190 by misreading the edge as self.
+  Keep our parser's zero-count behavior and do not modify counts to placate Perl.
+- Reproduced formatter limitations: wrong relative callee-address basis;
+  omitted `cob` causing cross-object edge misqualification; `call_tree` suffixes
+  applied to callee names but not function definitions; automatic units losing
+  integer precision; 2^53+1 rounding even with count units; means dividing node
+  self but not edge weight; explicit-unit divide_by ignored; negative output
+  correctly rejected by our unsigned parser. Upstream goldens pass despite
+  several of these issues. No upstream issue or patch was filed in this scope.
+- Multi-event, label, mapping and period metadata are lost by this one-metric
+  writer. Prefer independent protobuf readback plus per-event conservation for
+  converter validation. Restrict writer round trips explicitly, and retain
+  the ambiguity pair as a regression against overclaiming stack recovery.
+- Local formatting, Clippy, nextest (136), Cargo tests/doctests and Python (31)
+  passed. Optional audit probes are not automatically run by existing CI and
+  Go is not a new Rust development dependency. Existing SQLite CI remains
+  unchanged; its next push run checks that this research addition is harmless.
+- Papercuts: `go build` only fetched needed modules; `go mod verify` required
+  the remaining declared modules too, so the reproduction downloads the pinned
+  module graph first, then tests/builds with GOPROXY=off. Web raw-source fetch
+  was unavailable; the ordinary pinned upstream archive supplied verified local
+  source. Kept downloads, caches and generated reports under ignored `.dev/`.
+
 ### 2026-09-15: SQLite CI and Nix verified end to end
 
 - Commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b`,

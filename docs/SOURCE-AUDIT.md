@@ -2,6 +2,12 @@
 
 Audited 2026-09-14 against parser commit `2f6628c261d77555a3f15751919706117fd1a2ca`.
 
+Companion audit (2026-09-15): [pprof's Callgrind exporter](PPROF-CALLGRIND-AUDIT.md)
+traces weighted stacks into self/edge rows, reproduces non-invertibility and
+formatter fidelity problems, and narrows the oracle for the reverse converter.
+The original results below remain their dated checkpoint; current integration
+validation is recorded in [SMOKE-TEST.md](../SMOKE-TEST.md).
+
 ## Decision
 
 Keep the single incremental decoder and the owned, interned semantic model.
@@ -293,6 +299,13 @@ cast overflowing unsigned values to signed protobuf fields. Event units need
 an explicit map; syscall time even has mode-dependent units (`sysTime` long
 names in `new_dumpfile`). Gzip/Prost transport does not establish conversion
 correctness; independent pprof validation remains a separate gate.
+
+The [pprof companion audit](PPROF-CALLGRIND-AUDIT.md) now confirms this with
+two distinct sample populations that its ordinary exporter maps to identical
+Callgrind bytes. It also reproduces `calls=0`/Perl double counting, recursion
+deduplication, unit/integer loss, and target/object/context-name problems in
+the pinned formatter. Use the upstream profile reader and decoded sums as
+independent checks; its Callgrind writer is only a scoped oracle.
 
 ## Validation and follow-up
 

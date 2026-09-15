@@ -12,7 +12,8 @@ harness and plain-text annotator are committed; implementation baseline is
   location policy; do not invent full stacks or binary metadata. Test same-input
   conservation and validate with an independent pprof reader. Existing
   `SmokeMessage` tests cover transport only. See the handoff's implementation
-  contract before choosing schema dependencies.
+  contract and [pprof source audit](docs/PPROF-CALLGRIND-AUDIT.md) before choosing
+  schema dependencies or treating its Callgrind exporter as a test oracle.
 - [ ] **Build shared analysis for textgrind/webgrind.** Explicit import/part/thread
   selection and provenance, event-name remapping, checked aggregates, source/
   instruction indexes, reverse calls and exact SCCs. Preserve zero-count edges
@@ -21,6 +22,11 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Completed milestones
 
+- [x] Pprof Callgrind exporter source audit: pinned implementation, four upstream
+  test packages, 12 synthetic profiles and 32 real CLI probes. Reproduced
+  non-invertibility and specific formatter/reader limitations; no converter
+  implementation or new default CI gate is claimed. See
+  [docs/PPROF-CALLGRIND-AUDIT.md](docs/PPROF-CALLGRIND-AUDIT.md).
 - [x] Extensible SQLite CI and full Nix validation, commit `7a5daa76`:
   [both jobs green](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875).
   All 12 profiles validated; 93 same-file annotation comparisons passed in

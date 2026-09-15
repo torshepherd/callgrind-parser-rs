@@ -89,6 +89,8 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 - Do not synthesize full stacks or binary/inline metadata absent from the input.
   Pprof signed-range checks and any approximation belong in the converter.
 - Read `docs/SOURCE-AUDIT.md` before implementing analysis/frontend semantics.
+  For pprof work also read `docs/PPROF-CALLGRIND-AUDIT.md`; upstream's Callgrind
+  writer has documented losses and is not an unrestricted round-trip oracle.
   A zero call count can accompany nonzero inclusive cost after a dump. Preserve
   these edges. Do not treat reference annotator output as a universal oracle,
   or bake KCachegrind's cycle/inclusive display heuristics into raw parsing.

@@ -15,7 +15,8 @@ Read [AGENTS.md](../AGENTS.md) first, then this document. Implementation details
 and commands live in [the workload guide](../workload/README.md),
 [the reference guide](../tests/reference/README.md),
 [the annotator guide](../crates/callgrind-annotate/README.md), and
-[SOURCE-AUDIT.md](SOURCE-AUDIT.md). [TODO.md](../TODO.md) is the ordered checklist;
+[SOURCE-AUDIT.md](SOURCE-AUDIT.md). Before the converter, also read
+[the pprof exporter audit](PPROF-CALLGRIND-AUDIT.md). [TODO.md](../TODO.md) is the ordered checklist;
 [NOTES.md](../NOTES.md) retains decisions and papercuts.
 
 ## Current CI and development loop
@@ -130,7 +131,18 @@ The crate already has `callgrind-parser`, `clap`, `prost`, and pure-Rust-backend
 `flate2` dependencies. Its one test round-trips a custom one-field
 `SmokeMessage` through gzip; **it is not the pprof schema or conversion**.
 
-Start with [SOURCE-AUDIT.md, section 6](SOURCE-AUDIT.md). Recommended first scope:
+Start with [SOURCE-AUDIT.md, section 6](SOURCE-AUDIT.md) and
+[PPROF-CALLGRIND-AUDIT.md](PPROF-CALLGRIND-AUDIT.md). The latter pins upstream
+`6331bc6350fe55a6fec2957299e0581dd7510e36` and includes executable research
+probes: different stacks export to identical ordinary Callgrind bytes. Pprof
+computes inclusivity from supplied stacks; single-location samples deliberately
+have no callers. Its exporter is not a lossless oracle: zero call counts trip
+Perl, scaling/float conversion can lose exact values, and target addresses,
+cross-object edges and `call_tree` name wiring have reproduced problems.
+These are not reasons to weaken our parser or change counts to one. Use the
+upstream reader plus decoded per-event conservation, with a carefully scoped
+writer round trip. The optional Go probes are not in default CI and do not
+constitute an implemented converter. Recommended first scope:
 
 1. Read through the production parser, choose one part explicitly (reuse the
    annotator's user-facing zero-based part convention), and convert exclusive
