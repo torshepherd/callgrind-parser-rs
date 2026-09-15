@@ -1,0 +1,26 @@
+version: 1
+positions: line
+events: Ir Dr
+summary: 33 4
+ob=app
+fl=driver.cpp
+fn=main
+1 3 1
+cob=libA.so
+cfl=shared.cpp
+cfn=work
+calls=1 10
+1 20 1
+cob=libB.so
+cfl=shared.cpp
+cfn=work
+calls=2 10
+2 10 2
+ob=libA.so
+fl=shared.cpp
+fn=work
+10 20 1
+ob=libB.so
+fl=shared.cpp
+fn=work
+10 10 2

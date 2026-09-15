@@ -82,9 +82,13 @@ Perl's mutable annotation-denominator quirks, and whitespace are not emulated.
 
 The same-file reference suite compares source-grouped function costs/ranking,
 program totals and direct tree edge costs/counts. It normalizes whitespace,
-percent decorations, dot-as-zero, all-zero function rows and object decorations
-(Perl omits some). Duplicate nonzero `file:function` labels fail the comparator;
-full object identity is independently checked by the Rust/KCachegrind harness.
+percent decorations, dot-as-zero and all-zero function rows. Perl merges
+`file:function` across objects, so the comparator explicitly projects Rust's
+separate object rows into that view, adding exact costs and re-ranking while
+checking original ordering. Tree projection keeps both endpoints and exact
+call-count/cost sums. Duplicate full display identities still fail. This is
+comparison-only normalization; production object identity is unchanged and
+is independently checked by the Rust/KCachegrind harness.
 It runs away from source directories to avoid Perl's inconsistent cwd trimming.
 Focused tests protect intentional deviations, source display and CLI failures.
 

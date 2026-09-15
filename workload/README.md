@@ -4,8 +4,8 @@ The registry in [`default.nix`](default.nix) declares pinned inputs and commands
 The shared runner profiles each variant under the selected Callgrind
 configurations; the same raw bytes go to the Rust parser and both annotators.
 SQLite currently has two page-cache variants (64 and 4096 pages), each using
-all six configurations: **12 profiles and 87 annotation comparisons**, including
-the two focused annotation fixtures. Adding a workload does not require a new
+all six configurations: **12 profiles and 93 annotation comparisons**, including
+three focused annotation fixtures. Adding a workload does not require a new
 profile parser, comparator or workflow implementation.
 
 ## Run a workload
@@ -103,8 +103,15 @@ inside the initial Nix profile-generation derivation retains the CI build log;
 its incomplete Nix output is not promised as an artifact.
 
 The comparison checks event order, totals, nonzero function order/costs and
-call-tree edges. It normalizes whitespace, percentages, zero display and object
-decorations and uses Rust's explicit `--grouping=source`. It does not establish
+call-tree edges. It normalizes whitespace, percentages and zero display and
+uses Rust's explicit `--grouping=source`. Perl merges identical `file:function`
+names across objects; the comparator projects Rust rows into that same view
+with exact cost sums, then re-ranks. It checks original ordering before merging
+and rejects duplicate full display identities. Projected tree edges retain
+both endpoints, direction, summed call counts and costs. No production identity
+is changed. A threshold that splits a colliding group can still fail comparison;
+it is not silently accepted. The fixture covers a known cross-object collision.
+This does not establish
 source-output byte parity, full object identity or a KCachegrind/Qt CI pass.
 See [the reference guide](../tests/reference/README.md) for those boundaries.
 The existing Python harness is retained for now; a Rust migration is in TODO.md.

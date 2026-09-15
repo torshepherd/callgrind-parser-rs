@@ -109,11 +109,27 @@ the complete Rust suite has 136. Nix smoke includes this gate too (unverified).
 
 This compares semantic text tables, not byte-identical output. Rust uses the
 explicit `--grouping=source` view to match inline attribution. Object decoration
-is excluded because Perl omits it for some rows; duplicate nonzero file:function
-labels fail. Whitespace, percentages, dot-as-zero and all-zero function rows
-are normalized. Tree ties are compared as a multiset. Runs use the profile's
+is projected out because Perl both omits some decorations and merges the
+same file:function across different objects. Exact costs are summed and ranks
+recomputed only for collisions; original row ordering and duplicate full
+display identities are still checked. Tree projection retains both endpoints,
+direction and exact call-count/cost sums. Whitespace, percentages, dot-as-zero
+and all-zero function rows are normalized. Tree tie order is ignored. Runs use the profile's
 directory as cwd to avoid Perl stripping a source prefix from only some tags.
 The raw libcore suite independently checks full object/defining-file identity.
 Source output and deliberate deviations are covered by focused Rust tests;
 full source-output byte parity is not claimed. The annotator guide documents
 the precise policy boundaries and machine-report schema.
+
+
+## Nix collision regression, 2026-09-15
+
+The first integration CI run built the Rust package, passed its 136 tests and
+validated all 12 profiles, then exposed loader/libc symbols with identical
+`???:name` displays. Perl merged them; Rust correctly kept the objects separate.
+The comparator now projects those rows explicitly into Perl's granularity,
+without changing either CLI or raw profile. `object-collision.callgrind` and
+negative tests cover exact sums, row order, call counts and edge attachment.
+On the recovered CI corpus, all **93** annotation comparisons pass locally
+(39,597 nonzero function rows). Python tests: **31**. A rerun of the complete
+Actions/Nix gate is pending; these local comparisons are not that gate.

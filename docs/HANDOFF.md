@@ -87,7 +87,12 @@ then the integration app and smoke derivation both check the exact same bytes.
 CI keeps the corpus before compiling Rust and saves both annotators' reports
 and logs in writable outputs, including comparison failures. The new job and
 complete Nix wiring still need an actual green run before marking them verified.
-Local Rust gates and 28 Python tests passed; Nix is absent in this Work VM.
+The first Actions run (`34965651354`, commit `bd31bdf7`) built/tested the Rust
+package and validated all 12 raw profiles, then failed on the comparator's
+cross-object display-name restriction. Artifacts were retained. The fix adds
+explicit legacy-granularity projection plus a collision fixture, with 93 local
+same-file comparisons on those exact CI bytes and 31 Python tests passing.
+The complete Nix/Actions rerun is pending. Nix is absent in this Work VM.
 No production Rust behavior or software lockfile pins changed in this slice.
 
 

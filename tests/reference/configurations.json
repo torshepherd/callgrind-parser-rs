@@ -1,8 +1,0 @@
-{
-  "ir-only": ["--cache-sim=no", "--branch-sim=no"],
-  "branches-and-jumps": ["--cache-sim=no", "--branch-sim=yes", "--collect-jumps=yes"],
-  "balanced-cache": ["--cache-sim=yes", "--branch-sim=no", "--I1=32768,8,64", "--D1=32768,8,64", "--LL=8388608,16,64"],
-  "constrained-cache": ["--cache-sim=yes", "--branch-sim=no", "--I1=16384,4,64", "--D1=16384,4,64", "--LL=524288,8,64"],
-  "roomy-cache": ["--cache-sim=yes", "--branch-sim=no", "--I1=65536,8,64", "--D1=65536,8,64", "--LL=16777216,16,64"],
-  "full-simulation": ["--cache-sim=yes", "--branch-sim=yes", "--collect-jumps=yes", "--collect-systime=usec", "--simulate-wb=yes", "--simulate-hwpref=yes", "--cacheuse=yes", "--I1=32768,8,64", "--D1=32768,8,64", "--LL=8388608,16,64"]
-}

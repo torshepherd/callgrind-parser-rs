@@ -6,6 +6,38 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-15: first integration run found cross-object display collisions
+
+- Commit `bd31bdf7`, Actions run `34965651354`: fast job green; Nix installed,
+  built the pinned SQLite corpus and Rust workspace, passed 136 Nix Rust tests
+  and doctests, installed both example binaries correctly, and validated all
+  12 profile self totals. The annotation step then failed on duplicate display
+  names. Artifact `10394724800` retained all profiles and both failing reports.
+- Inspected those bytes and the SHA-256-verified upstream Valgrind 3.26.0 Perl
+  source. Loader/libc both define names such as `???:strcmp`; Rust correctly
+  retains each object while Perl keys its totals by file:function. Self and
+  inclusive rows add exactly to the legacy values. Debug symbols were absent
+  from this Nix corpus; the explicit model difference also applies generally.
+- Kept production Rust behavior and both raw inputs unchanged. The comparator
+  now projects colliding object rows into the documented legacy granularity,
+  with exact sums and re-ranking. It validates original row order first and
+  still rejects duplicate full display identities. No silent skipping of rows.
+  Tree comparison now retains caller, callee and direction before summing
+  projected edge counts/costs; this also detects wrong-parent attachment that
+  the former context-free edge multiset could miss. A threshold splitting a
+  collision group remains a strict mismatch, not an automatically waived case.
+- Added a minimal two-object collision profile and negative sum/order/count/
+  endpoint tests. All 93 comparisons on the recovered 12-case CI corpus plus
+  three fixtures pass locally (39,597 nonzero rows); 31 Python tests pass.
+  Full CI/Nix rerun pending. Raw object identity is still covered independently
+  by Rust tests and the native libcore harness, not claimed by this projection.
+- Papercuts: active job-log downloads return BlobNotFound until job completion.
+  Artifact download succeeded through the GitHub connection; Python urllib's
+  default client received HTTP 403/1010 at the returned file URL, while ordinary
+  curl downloaded that same authorized URL successfully. No credentials or
+  access settings changed. Useful failure artifacts made local reproduction
+  possible without rebuilding Nix or re-running the workload.
+
 ### 2026-09-15: extensible SQLite integration CI implementation
 
 - User authorized the SQLite/legacy-annotator CI slice and requested an easy
