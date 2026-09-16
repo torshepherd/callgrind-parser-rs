@@ -54,14 +54,22 @@ Python remains accepted for now; an eventual Rust harness migration is deferred.
 
 ## Observed validation
 
-- Current completed verification: implementation `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb`,
+- Current completed verification: both converters at
+  `31c8f8fbe04d8b4a14c9445f206a5abd1112e8a5`,
+  [run 35089449560](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35089449560), **all three jobs/every step green**.
+  169 Rust / 36 Python tests; 41 files / 43 reverse-converted parts independently
+  validated and reported by upstream pprof, including all 12 freshly generated
+  SQLite profiles from this run. All 22 KCachegrind comparisons, 93 annotation
+  comparisons in both app and sandboxed smoke, and complete flake check passed.
+  Artifacts `10443179842` (pprof) and `10443776462` (SQLite), seven-day retention.
+- Previous forward-converter verification: `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb`,
   [run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415),
   **all three jobs and every step green**. 155 Rust / 36 Python tests, four
   upstream Go packages, 12 Rust gzip cross-reads, 22 independent KCachegrind
   comparisons, 12 SQLite profiles, 93 annotator comparisons in app and smoke,
   successful flake check. Artifacts `10428103735` and `10428790541`, seven days.
   See [SMOKE-TEST.md](../SMOKE-TEST.md) for precise scope and pins.
-- Local formatting, Clippy, nextest and Cargo tests passed: 155 Rust tests.
+- Local formatting, Clippy, nextest and Cargo tests passed: 169 Rust tests.
   Python suite: 36 tests. On the recovered first-CI corpus, 93 same-file
   annotation comparisons passed, covering 39,597 nonzero function rows.
 - Previous full verification: commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b`,
@@ -176,7 +184,8 @@ stay distinct. The flat-only limitation is explicit in both comments and stderr.
 Local validation: 169 Rust tests, 36 Python tests, fmt/Clippy/Cargo gates; upstream
 Go readback and actual report commands passed for 41 files / 43 parts, including
 12 recovered SQLite profiles. The native CI job now follows SQLite to download
-and convert the exact newly validated corpus. Fresh expanded CI run pending.
+and convert the exact newly validated corpus. Expanded native CI passed on
+41 files / 43 parts in [run 35089449560](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35089449560).
 
 ## Next task: shared UI analysis
 

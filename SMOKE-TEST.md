@@ -1,6 +1,35 @@
 # Verified smoke-test results
 
-## Current full gate, 2026-09-16
+## Current full gate: both converters, 2026-09-16
+
+Commit `31c8f8fbe04d8b4a14c9445f206a5abd1112e8a5` passed
+[run 35089449560](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35089449560).
+All three jobs and every step completed successfully:
+
+- Rust/Python: fresh bootstrap, fmt, strict Clippy, 169 nextest tests,
+  Cargo tests/doctests and 36 Python tests.
+- Reverse conversion: upstream Go pprof independently decoded and checked
+  **41 files / 43 parts**, with exact per-event totals, function/source rows,
+  original-position labels and flat-sample metadata. Actual upstream top reports
+  succeeded for every part. The corpus comprises seven focused fixtures (nine
+  parts), 22 forward-converter outputs, and all 12 SQLite profiles downloaded
+  from this same run. Oracle mutation/rejection tests passed too.
+- Existing forward/native checks: four upstream Go packages, 12 generated
+  profiles / 32 CLI probes, 12 Rust gzip cross-reads, and **22 independent
+  KCachegrind comparisons passed**.
+- SQLite/Nix: all 12 profiles/annotations validated; **93 comparisons passed**
+  (39,597 nonzero rows) in both app and sandboxed smoke. Complete flake check
+  succeeded using the built derivations.
+- Seven-day artifacts: pprof/KCachegrind `10443179842`, SQLite `10443776462`.
+  Go/pprof and KCachegrind source pins are unchanged; host Qt/C++ come from
+  Ubuntu 24.04. SQLite/Nix pins are unchanged below.
+
+This is exact flat exclusive-cost export, not full-stack reconstruction.
+Integer decoded data is the oracle; formatted pprof percentages are not.
+Local Rust/Python and independent Go checks also passed. Qt/Nix validation
+was performed on Actions.
+
+## Previous forward-converter gate, 2026-09-16
 
 Implementation commit `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb` passed
 [Actions run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415).

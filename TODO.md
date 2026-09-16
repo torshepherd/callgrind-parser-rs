@@ -19,7 +19,8 @@ harness and plain-text annotator are committed; implementation baseline is
   signed ranges. Fourteen Rust regressions replace the transport-only stub test;
   shared gzip flushing has another regression. Local upstream readback/report
   validation passed on 41 files / 43 parts, including 12 recovered SQLite files.
-  Expanded same-corpus native CI is implemented; first fresh run pending.
+  Expanded same-corpus native CI passed on freshly generated SQLite profiles in
+  [run 35089449560](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35089449560); all three jobs green.
   See [the guide](crates/callgrind2pprof/README.md).
 
 - [x] `pprof2callgrind`: complete shared pprof bindings/I/O, reusable writer,
@@ -52,7 +53,7 @@ harness and plain-text annotator are committed; implementation baseline is
 - [x] Plain-text annotator, committed as `d079112`: costs/ranking, options,
   call trees and source annotation; 87 same-file semantic comparisons passed.
   Boundaries: [annotator README](crates/callgrind-annotate/README.md).
-- [x] Latest observed complete Rust gates: 155 tests, formatting and Clippy;
+- [x] Latest observed complete Rust gates: 169 tests, formatting and Clippy;
   Python suite: 36 tests. The current native/Nix result is recorded above.
 
 ## Deferred extensions
