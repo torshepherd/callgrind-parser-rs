@@ -11,11 +11,20 @@ fn run(text: &str, args: &[&str]) -> std::process::Output {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    c.stdin.take().unwrap().write_all(text.as_bytes()).unwrap();
-    c.wait_with_output().unwrap()
+    let written = c.stdin.take().unwrap().write_all(text.as_bytes());
+    let output = c.wait_with_output().unwrap();
+    if let Err(error) = written {
+        // Argument validation can exit before consuming any stdin.
+        assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+        assert!(!output.status.success());
+    }
+    output
 }
 #[test]
 fn stdin_gzip_stdout_and_argument_failures() {
+    let early_exit = run(&"x".repeat(1024 * 1024), &["--unit", "bad"]);
+    assert!(!early_exit.status.success());
+    assert!(early_exit.stdout.is_empty());
     let text = "events: Ir sysTime\n1 9007199254740993 1500\n";
     let r = run(text, &["--unit", "sysTime=microseconds"]);
     assert!(r.status.success());

@@ -40,6 +40,11 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
   of only the pprof job works. Retain parser TSV/gzip/reports/diagnostics. Existing
   22 KCachegrind comparisons and 93 SQLite annotate comparisons stay intact.
   Fresh expanded CI run pending. Qt/Nix continue running only on Actions.
+- First expanded run `35088328654` exposed a CLI test harness race: invalid
+  --unit is rejected before stdin consumption, so the parent's write can return
+  BrokenPipe depending on scheduling. The helper now accepts only BrokenPipe
+  paired with child failure and still checks stderr/stdout/status; a 1 MiB invalid
+  invocation exercises early exit reliably. No production semantics changed.
 - Next: shared UI analysis, then textgrind/webgrind. Exact caller-stack recovery
   is impossible in general; a future allocation mode must name its approximation.
 
