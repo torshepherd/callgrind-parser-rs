@@ -36,7 +36,7 @@ Three separate Ubuntu 24.04 jobs run:
   Cargo tests/doctests, and 36 Python tests. No custom cache is required.
 - Pprof/KCachegrind: pinned Go/pprof and unmodified native reader; 12 input
   profiles, Rust gzip cross-read, 22 graph/tree comparisons, input-derived
-  stack/cost expectations. Initial native CI run pending. Qt installation was
+  stack/cost expectations. Native CI passed. Qt installation was
   permission-blocked locally; user approved running this check on Actions.
 - Nix SQLite integration: pinned SQLite 3.51.2 and Valgrind 3.26.0, two page-cache
   variants times six configurations, production-parser total validation, both
@@ -53,10 +53,17 @@ Python remains accepted for now; an eventual Rust harness migration is deferred.
 
 ## Observed validation
 
-- Local formatting, Clippy, nextest and Cargo tests passed: 136 Rust tests.
-  Python suite: 31 tests. On the recovered first-CI corpus, 93 same-file
+- Current completed verification: implementation `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb`,
+  [run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415),
+  **all three jobs and every step green**. 155 Rust / 36 Python tests, four
+  upstream Go packages, 12 Rust gzip cross-reads, 22 independent KCachegrind
+  comparisons, 12 SQLite profiles, 93 annotator comparisons in app and smoke,
+  successful flake check. Artifacts `10428103735` and `10428790541`, seven days.
+  See [SMOKE-TEST.md](../SMOKE-TEST.md) for precise scope and pins.
+- Local formatting, Clippy, nextest and Cargo tests passed: 155 Rust tests.
+  Python suite: 36 tests. On the recovered first-CI corpus, 93 same-file
   annotation comparisons passed, covering 39,597 nonzero function rows.
-- Completed full verification: commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b`,
+- Previous full verification: commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b`,
   [Actions run 34999337875](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875),
   **passed both jobs and every step**. Native logs confirm 136 Rust tests,
   31 Python tests, all 12 profile totals, and 93 annotation comparisons
@@ -70,8 +77,9 @@ Python remains accepted for now; an eventual Rust harness migration is deferred.
   into Perl's file:function view. Tree comparison retains both endpoints and
   exact calls/costs. A collision fixture and negative tests cover this behavior.
 - Historical independent KCachegrind libcore gate: 186,876 raw aggregate rows
-  and eight focused fixtures passed. **This Qt/C++ gate is not in current CI.**
-  Its commands and pins remain in the reference guide and source audit.
+  and eight focused fixtures passed. That broader SQLite/libcore gate remains
+  separate; the new pprof job adds converter-specific Qt/C++ coverage in CI.
+  Commands and pins remain in the reference guide and source audit.
 
 The parser supports its documented dialect; a passing differential does not
 establish full format conformance, object attribution parity in Perl's merged
@@ -176,9 +184,8 @@ separate native CI gate; they are not reverse conversion. Recommended first scop
    coding. Preserve object qualification and attributed source locations;
    do not fabricate inline chains, runtime mappings, load addresses or build IDs.
    Callgrind instruction addresses are not automatically runtime virtual addresses.
-3. Use the actual upstream pprof schema at an identified revision with appropriate
-   attribution; choose checked-in generated Prost bindings or a suitable pinned
-   schema crate. Preserve ordinary builds without requiring protoc.
+3. Reuse `pprof-profile`'s attributed upstream schema and checked-in Prost
+   bindings. Preserve ordinary builds without requiring protoc.
 4. Aggregate with checked unsigned arithmetic, then validate signed protobuf
    ranges before conversion. Check location IDs, string-table indexes and sample
    widths against the chosen schema. Do not silently wrap, clamp or drop costs.

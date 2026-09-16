@@ -25,7 +25,8 @@ harness and plain-text annotator are committed; implementation baseline is
 - [x] `pprof2callgrind`: complete shared pprof bindings/I/O, reusable writer,
   exact multi-event graph and context-tree modes, 19 new Rust tests. Local
   workspace: 155 Rust / 36 Python tests; upstream pprof cross-read passed.
-  Independent KCachegrind CI gate implemented; initial run pending.
+  Independent KCachegrind CI gate: 22 comparisons passed; all three jobs green
+  in [run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415).
   Reverse `callgrind2pprof` remains next; reuse `pprof-profile`.
 
 - [x] Pprof Callgrind exporter source audit: pinned implementation, four upstream
@@ -51,8 +52,8 @@ harness and plain-text annotator are committed; implementation baseline is
 - [x] Plain-text annotator, committed as `d079112`: costs/ranking, options,
   call trees and source annotation; 87 same-file semantic comparisons passed.
   Boundaries: [annotator README](crates/callgrind-annotate/README.md).
-- [x] Latest observed complete Rust gates: 136 tests, formatting and Clippy;
-  Python suite: 31 tests. The current native/Nix result is recorded above.
+- [x] Latest observed complete Rust gates: 155 tests, formatting and Clippy;
+  Python suite: 36 tests. The current native/Nix result is recorded above.
 
 ## Deferred extensions
 

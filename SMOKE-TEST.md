@@ -1,6 +1,32 @@
 # Verified smoke-test results
 
-## Current integration gate, 2026-09-15
+## Current full gate, 2026-09-16
+
+Implementation commit `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb` passed
+[Actions run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415).
+All three jobs and every step completed successfully:
+
+- Rust/Python: fresh bootstrap, fmt, strict Clippy, 155 nextest tests,
+  Cargo tests/doctests and 36 Python tests.
+- Pprof/KCachegrind: four upstream Go packages; 12 generated profiles and
+  32 upstream CLI probes; independent Go readback of all 12 Rust gzip outputs;
+  negative rejection in both modes; **22 native reader comparisons passed**.
+  Exact self/edge/source-line costs and full identities matched unmodified
+  KCachegrind libcore, including zero-count recursion, cross-object callees,
+  values above 2^53 and multiple columns. Input-derived checks additionally
+  verified graph weights and full tree paths. GUI inclusive heuristics excluded.
+- SQLite/Nix: all 12 profiles/annotations validated; **93 comparisons passed**
+  (39,597 nonzero rows) in both app and sandboxed smoke; flake check succeeded
+  using the built derivations. SQLite/Valgrind pins are unchanged below.
+- Uploaded seven-day artifacts: pprof/KCachegrind `10428103735`, SQLite
+  `10428790541`. The native pprof script is `scripts/check-pprof.sh`; source and
+  Go archives are pinned, while Qt/C++ come from the Ubuntu 24.04 runner.
+
+Local Rust/Python and upstream pprof readback also passed. Local Qt installation
+was permission-blocked; the user approved native validation on Actions instead.
+The results above are actual completed CI execution, not inferred YAML coverage.
+
+## Previous integration gate, 2026-09-15
 
 Commit `7a5daa76431c69d8c01974a3689a1a8a5f40a91b` passed
 [Actions run 34999337875](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875) on Ubuntu 24.04 x86_64.

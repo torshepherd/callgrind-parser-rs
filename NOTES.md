@@ -34,7 +34,15 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
   probes, Rust cross-read, pinned unmodified KCachegrind libcore. Raw reader
   comparison covers self/edges/source lines, with independent known-stack
   expectations for leaf costs, exact edges and tree paths. Artifacts retained.
-  Initial native CI run pending. Unlike SQLite/Nix, host Qt/C++ are Ubuntu packages.
+  Unlike SQLite/Nix, host Qt/C++ are Ubuntu packages.
+- Actual completed verification: implementation `ed99dedbed618ff4265858d8bc1e9494e5e9dbbb`,
+  [run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415),
+  all three jobs/every step green. Native logs confirm 22 KCachegrind comparisons,
+  four upstream Go test packages, pprof probes and cross-read, plus 93 SQLite
+  comparisons in both app/sandbox smoke and successful flake check. Artifacts
+  `10428103735` (pprof) and `10428790541` (SQLite), retained seven days. See
+  `SMOKE-TEST.md`. Full prospective remote tree (109 files, blobs and modes)
+  was verified before the non-forced update; implementation worktree was clean.
 - Papercut: local apt installation failed on setgroups/setuid permission checks.
   Stopped, asked user, and received approval to run Qt validation on Actions.
   No permission workaround attempted. User explicitly requires no intended work
