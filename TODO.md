@@ -22,10 +22,16 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Completed milestones
 
+- [x] `pprof2callgrind`: complete shared pprof bindings/I/O, reusable writer,
+  exact multi-event graph and context-tree modes, 19 new Rust tests. Local
+  workspace: 155 Rust / 36 Python tests; upstream pprof cross-read passed.
+  Independent KCachegrind CI gate implemented; initial run pending.
+  Reverse `callgrind2pprof` remains next; reuse `pprof-profile`.
+
 - [x] Pprof Callgrind exporter source audit: pinned implementation, four upstream
   test packages, 12 synthetic profiles and 32 real CLI probes. Reproduced
-  non-invertibility and specific formatter/reader limitations; no converter
-  implementation or new default CI gate is claimed. See
+  non-invertibility and specific formatter/reader limitations. This research
+  preceded the converter milestone above. See
   [docs/PPROF-CALLGRIND-AUDIT.md](docs/PPROF-CALLGRIND-AUDIT.md).
 - [x] Extensible SQLite CI and full Nix validation, commit `7a5daa76`:
   [both jobs green](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/34999337875).

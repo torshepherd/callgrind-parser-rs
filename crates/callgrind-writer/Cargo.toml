@@ -1,0 +1,10 @@
+[package]
+name = "callgrind-writer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Explicit-position, exact-integer Callgrind output"
+
+[dev-dependencies]
+callgrind-parser.workspace = true

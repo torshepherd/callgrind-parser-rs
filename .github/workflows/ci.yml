@@ -19,6 +19,35 @@ env:
   RUST_BACKTRACE: "1"
 
 jobs:
+  pprof:
+    name: Pprof and KCachegrind integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install native reader dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends build-essential ca-certificates curl git gzip tar python3 pkg-config qt6-base-dev
+      - name: Install pinned Rust and locked dependencies
+        run: bash .codex/setup.sh
+      - name: Cross-read pprof and compare Callgrind with pinned KCachegrind
+        run: |
+          mkdir -p results
+          set -o pipefail
+          bash scripts/check-pprof.sh "$PWD/results/pprof" 2>&1 | tee results/pprof.log
+      - name: Upload inputs, converted profiles and reader reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pprof-kcachegrind-${{ github.run_attempt }}
+          path: results/
+          retention-days: 7
+          if-no-files-found: warn
+
   tests:
     name: Rust and Python tests
     runs-on: ubuntu-24.04

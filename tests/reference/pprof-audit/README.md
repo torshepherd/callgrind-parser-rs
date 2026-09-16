@@ -8,10 +8,26 @@ and reader, then invokes its unmodified CLI. It creates 12 profiles and runs
 and stderr. Assertions cover stack ambiguity and selected exporter quirks.
 The assertions describe this pinned version, not behavior to copy into Rust.
 
-This is separate from ordinary Cargo/Python CI. It does not install a new
-project dependency or require Go for Rust development. Network access is
+The source-audit mode remains available. A separate native CI job also passes
+`--converter` and `--roundtrip` to validate the Rust implementation. It does
+not require Go for ordinary Rust development. Network access is
 needed only to obtain the pinned source/toolchain and its locked Go modules;
 the actual probes need no network or native profiled workload.
+
+## Converter/KCachegrind CI gate
+
+After Rust bootstrap, on x86_64 Linux with C++, pkg-config and Qt6Core development
+files installed, run `bash scripts/check-pprof.sh "$PWD/results/pprof"` from the
+repository root with a new empty results directory. It verifies archive hashes
+for Go 1.27.1 and pprof, tests four upstream packages, runs 12 fixtures/32 upstream
+probes, cross-reads 12 Rust gzip outputs, checks negative rejection in both modes,
+and compares 22 converted files with unmodified KCachegrind
+`764dbf2cf5f44e1f982a231e472b9ed2f2b6cc14`.
+
+`check_pprof.py` reuses the raw TSV comparator and independently checks known
+sample paths, self costs and edge weights. GUI inclusivity/cycle heuristics are
+not the oracle. Exports and diagnostics survive failures. Unlike the hermetic
+SQLite/Nix gate, this pins Go/reader sources but uses Ubuntu's host Qt/C++ packages.
 
 ## Reproduce from the repository root
 

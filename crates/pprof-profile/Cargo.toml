@@ -1,0 +1,11 @@
+[package]
+name = "pprof-profile"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Shared validated pprof protobuf and gzip I/O for Callgrind tools"
+
+[dependencies]
+prost.workspace = true
+flate2.workspace = true

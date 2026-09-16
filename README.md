@@ -12,8 +12,9 @@ and subtly incompatible reader.
 > [!NOTE]
 > The parser foundation is implemented with incremental decoding, an owned
 > interned model, and active grammar/property tests. `callgrind-annotate` now
-> provides plain-text reports, call trees and source annotation. The other
-> applications remain stubs; full dialect support is not claimed.
+> provides plain-text reports, call trees and source annotation.
+> `pprof2callgrind` exports exact-integer graphs or context trees. The reverse
+> converter and UI applications remain stubs; full dialect support is not claimed.
 
 ## Annotate a profile
 
@@ -26,6 +27,16 @@ See the [annotator guide](crates/callgrind-annotate/README.md) for options and
 compatibility boundaries. Output is deliberately plain aligned text. The
 default keeps inline-attributed costs with their defining function;
 `--grouping=source` selects the traditional Perl-style split.
+
+## Convert a pprof profile
+
+```console
+./scripts/cargo.sh run -p pprof2callgrind --locked --offline -- profile.pb.gz -o profile.callgrind
+./scripts/cargo.sh run -p pprof2callgrind --locked --offline -- --mode tree profile.pb.gz -o tree.callgrind
+```
+
+See [the converter guide](crates/pprof2callgrind/README.md) for exact costs,
+identity/metadata policies and compatibility boundaries.
 
 ## Why this exists
 
@@ -65,6 +76,9 @@ Callgrind format well when Callgrind is the right producer.
 | `callgrind-parser` | The primary library: parse Callgrind files into a shared data model and expose analysis primitives. |
 | `callgrind-annotate` | A compatible, scriptable Rust alternative to `callgrind_annotate`. |
 | `callgrind2pprof` | Convert Callgrind data for use with pprof-compatible tools. |
+| `pprof2callgrind` | Exact pprof graph/context-tree export with all value columns. |
+| `pprof-profile` | Shared schema and bounded protobuf/gzip I/O. |
+| `callgrind-writer` | Streaming writer with explicit identities and absolute positions. |
 | `textgrind` | Explore profiles interactively in a terminal. |
 | `webgrind` | Explore profiles through a parser-backed web application. |
 
@@ -114,6 +128,10 @@ roll it back.
 A separate Nix job profiles SQLite, validates all 12 raw profiles, compares
 both annotators and retains reports/logs as CI artifacts. Passing the fast
 checks alone does not establish native integration parity.
+
+A third job cross-reads pprof using pinned upstream Go code and compares
+converted graphs/trees with pinned KCachegrind libcore. Its Qt dependency is
+installed only on the CI runner; everyday Rust development remains unchanged.
 
 ### Native integration
 

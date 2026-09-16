@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -54,6 +55,8 @@ func sample(p *profile.Profile, value int64, stack ...int) {
 func main() {
 	pprof := flag.String("pprof", "", "absolute path to the pinned pprof executable")
 	out := flag.String("out", "", "new, empty output directory")
+	roundtrip := flag.String("roundtrip", "", "optional Rust pprof roundtrip executable")
+	converter := flag.String("converter", "", "optional Rust pprof2callgrind executable")
 	flag.Parse()
 	require(filepath.IsAbs(*pprof) && filepath.IsAbs(*out), "--pprof and --out must be absolute")
 	must(os.MkdirAll(*out, 0755))
@@ -129,6 +132,34 @@ func main() {
 		must(decoded.CheckValid())
 		must(os.WriteFile(filepath.Join(*out, name+".pb.gz"), buf.Bytes(), 0644))
 		must(os.WriteFile(filepath.Join(*out, name+".profile.txt"), []byte(decoded.String()), 0644))
+		if *roundtrip != "" {
+			cmd := exec.Command(*roundtrip)
+			cmd.Stdin = bytes.NewReader(buf.Bytes())
+			raw, err := cmd.Output()
+			must(err)
+			reread, err := profile.ParseData(raw)
+			must(err)
+			must(reread.CheckValid())
+			require(reflect.DeepEqual(decoded, reread), "Rust protobuf roundtrip changed "+name)
+			must(os.WriteFile(filepath.Join(*out, name+".rust.pb.gz"), raw, 0644))
+		}
+		if *converter != "" {
+			for _, mode := range []string{"graph", "tree"} {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				cmd := exec.CommandContext(ctx, *converter, "--mode", mode, filepath.Join(*out, name+".pb.gz"))
+				var stdout, stderr bytes.Buffer
+				cmd.Stdout, cmd.Stderr = &stdout, &stderr
+				err := cmd.Run()
+				cancel()
+				must(os.WriteFile(filepath.Join(*out, name+".rust-"+mode+".stderr"), stderr.Bytes(), 0644))
+				if name == "negative" {
+					require(err != nil && stdout.Len() == 0 && strings.Contains(stderr.String(), "negative sample"), "negative conversion must fail without output")
+				} else {
+					must(err)
+					must(os.WriteFile(filepath.Join(*out, name+".rust-"+mode+".callgrind"), stdout.Bytes(), 0644))
+				}
+			}
+		}
 	}
 
 	run := func(name, input string, options ...string) []byte {

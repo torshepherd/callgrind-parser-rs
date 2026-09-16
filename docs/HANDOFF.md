@@ -1,13 +1,16 @@
-# Fresh-session handoff: CI verified; pprof next
+# Fresh-session handoff: pprof2callgrind implemented
 
-Updated 2026-09-15. Repository: `torshepherd/callgrind-parser-rs`.
+Updated 2026-09-16. Repository: `torshepherd/callgrind-parser-rs`.
 Default branch verified for this update: **master**. Resolve it again when resuming.
 
 ## Start here
 
 The parser, durable reference harness and plain-text annotator are implemented.
 **Do not reconstruct the harness or treat the annotator as a stub.** SQLite
-integration CI is implemented and verified green. Next, implement the first
+integration CI is implemented and verified green. Following the pprof audit,
+the user prioritized **pprof2callgrind**, now implemented with exact graph/tree
+modes and shared pprof I/O. Read [its guide](../crates/pprof2callgrind/README.md).
+Next, implement the first
 exclusive-cost `callgrind2pprof` converter, then shared analysis for `textgrind`
 and `webgrind`.
 
@@ -27,10 +30,14 @@ or add a revert commit. Never rewrite shared history. Push triggers cover
 `master` and `main` if renamed later; optional PR and manual triggers remain.
 CI reports failures after the push and does not automatically roll back.
 
-Two separate Ubuntu 24.04 jobs run:
+Three separate Ubuntu 24.04 jobs run:
 
-- Fast Rust/Python: pinned bootstrap, formatting, Clippy, 136 nextest tests,
-  Cargo tests/doctests, and 31 Python tests. No custom cache is required.
+- Fast Rust/Python: pinned bootstrap, formatting, Clippy, 155 nextest tests,
+  Cargo tests/doctests, and 36 Python tests. No custom cache is required.
+- Pprof/KCachegrind: pinned Go/pprof and unmodified native reader; 12 input
+  profiles, Rust gzip cross-read, 22 graph/tree comparisons, input-derived
+  stack/cost expectations. Initial native CI run pending. Qt installation was
+  permission-blocked locally; user approved running this check on Actions.
 - Nix SQLite integration: pinned SQLite 3.51.2 and Valgrind 3.26.0, two page-cache
   variants times six configurations, production-parser total validation, both
   annotators on the identical profile, sandboxed smoke, and complete flake check.
@@ -125,11 +132,27 @@ access still worked and completed the annotator push. A missing execution
 server is not evidence that remote work was lost. Do not claim a new test pass
 unless a new test actually ran.
 
-## Next task: exclusive-cost pprof converter
+## Completed slice: pprof2callgrind
+
+`pprof-profile` contains the full checked-in schema/Prost bindings and validated,
+bounded raw/gzip I/O. `callgrind-writer` streams explicit identities, absolute
+PCs, escaped names and exact self totals. The converter supports graph/default
+and context-tree modes, recursion/inlining, every event column, checked u64
+aggregation and negative rejection. Calls=0 means unknown, never invented.
+Metadata losses and identity suffixes are documented in its README.
+
+Local fmt/Clippy/nextest/Cargo gates passed (155 Rust tests), Python 36; pinned
+Go independently read all 12 Rust-reencoded profiles. Both conversion modes
+pass input-derived fixture checks. Native Qt checks run on CI, not this Work VM.
+Do not retry apt with sandbox bypasses. The user approved Actions instead and
+explicitly requires every intended change committed and pushed before handoff.
+
+## Next task: exclusive-cost reverse pprof converter
 
 The crate already has `callgrind-parser`, `clap`, `prost`, and pure-Rust-backend
 `flate2` dependencies. Its one test round-trips a custom one-field
-`SmokeMessage` through gzip; **it is not the pprof schema or conversion**.
+`SmokeMessage` through gzip; **it is not conversion**. Reuse `pprof-profile`
+for the real schema/transport rather than maintaining another set of bindings.
 
 Start with [SOURCE-AUDIT.md, section 6](SOURCE-AUDIT.md) and
 [PPROF-CALLGRIND-AUDIT.md](PPROF-CALLGRIND-AUDIT.md). The latter pins upstream
@@ -141,8 +164,8 @@ Perl, scaling/float conversion can lose exact values, and target addresses,
 cross-object edges and `call_tree` name wiring have reproduced problems.
 These are not reasons to weaken our parser or change counts to one. Use the
 upstream reader plus decoded per-event conservation, with a carefully scoped
-writer round trip. The optional Go probes are not in default CI and do not
-constitute an implemented converter. Recommended first scope:
+writer round trip. The Go probes now also participate in the forward converter's
+separate native CI gate; they are not reverse conversion. Recommended first scope:
 
 1. Read through the production parser, choose one part explicitly (reuse the
    annotator's user-facing zero-based part convention), and convert exclusive

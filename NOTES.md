@@ -6,6 +6,42 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-16: exact pprof2callgrind implementation
+
+- After the exporter audit, user prioritized implementing our own forward
+  converter before the exclusive-cost reverse converter. Added shared complete
+  pprof schema/Prost bindings and bounded raw/gzip I/O, reusable streaming
+  Callgrind writer, graph/default and context-tree conversion and CLI.
+- All value columns retain exact original integers/units. Leaf costs are
+  exclusive; graph edges receive each sample once per distinct ordered frame
+  pair, including recursive self edges. Tree contexts retain root-prefix paths
+  and distinct recursive occurrences. calls=0 means unknown, not fake counts.
+- Identity includes mapping/function IDs, PC and line; unknown frames retain
+  location IDs. Function suffixes prevent reader name collisions. Context IDs
+  are deterministic. Explicit callee objects and absolute positions avoid the
+  audited upstream target bugs. Names use injective percent encoding; metadata
+  losses, labels, source-path consequences and bounded-memory limits are explicit.
+- Negative costs/lines, empty nonzero stacks, width/reference errors and u64
+  overflow fail; named output refuses overwrite and opens only after validation.
+  `Report` exposes read-only accessors so callers cannot corrupt edge indices.
+- Added 19 Rust tests: all-field I/O, gzip CRC/truncation/trailing data/limits,
+  exact large/multiple values, graph ambiguity vs trees, recursion, inline and
+  unknown identity, writer escaping/state and CLI validation/overwrite behavior.
+  All 155 Rust tests and 36 Python tests passed, plus fmt and strict Clippy.
+  Upstream Go successfully cross-read all 12 Rust gzip profiles; 22 converted
+  outputs passed the input expectations locally (not an independent Qt pass).
+- Added separate native Actions gate: hash-pinned Go/pprof, upstream tests and
+  probes, Rust cross-read, pinned unmodified KCachegrind libcore. Raw reader
+  comparison covers self/edges/source lines, with independent known-stack
+  expectations for leaf costs, exact edges and tree paths. Artifacts retained.
+  Initial native CI run pending. Unlike SQLite/Nix, host Qt/C++ are Ubuntu packages.
+- Papercut: local apt installation failed on setgroups/setuid permission checks.
+  Stopped, asked user, and received approval to run Qt validation on Actions.
+  No permission workaround attempted. User explicitly requires no intended work
+  left uncommitted or unpushed. Generated profiles/build output stay ignored.
+- Reverse `callgrind2pprof` is still a stub. Reuse new shared pprof I/O when
+  implementing it; do not imply exact full-stack reconstruction from aggregates.
+
 ### 2026-09-15: pprof Callgrind exporter audit and reverse-conversion boundary
 
 - User requested this source deep dive before implementing the converter.
