@@ -149,3 +149,17 @@ fn output_failures_propagate() {
     }
     assert!(write(&fixture(), Fail).is_err());
 }
+
+#[test]
+fn final_flush_failures_propagate() {
+    struct FailFlush;
+    impl std::io::Write for FailFlush {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Err(std::io::Error::other("flush"))
+        }
+    }
+    assert!(write(&fixture(), FailFlush).is_err());
+}

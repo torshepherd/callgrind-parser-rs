@@ -146,8 +146,7 @@ version = "0.0.0"
 dependencies = [
  "callgrind-parser",
  "clap",
- "flate2",
- "prost",
+ "pprof-profile",
 ]
 
 [[package]]

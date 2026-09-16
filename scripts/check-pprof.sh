@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Separate native CI gate; ordinary Cargo builds do not require Go or Qt.
 set -euo pipefail
-[[ $# == 1 ]] || { echo "usage: $0 NEW_RESULTS_DIRECTORY" >&2; exit 2; }
+[[ $# -ge 1 && $# -le 2 ]] || { echo "usage: $0 NEW_RESULTS_DIRECTORY [SQLITE_PROFILES_DIRECTORY]" >&2; exit 2; }
+sqlite_profiles=()
+if [[ $# == 2 ]]; then sqlite_profiles=(--sqlite "$(cd "$2" && pwd)"); fi
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 mkdir -p "$1"
 out=$(cd "$1" && pwd)
@@ -28,6 +30,10 @@ cd "$repo_root"
 cd "$build/pprof-$pin"
 go run "$repo_root/tests/reference/pprof-audit/probe.go" --pprof "$build/pprof" --out "$out" \
   --converter "$repo_root/target/debug/pprof2callgrind" --roundtrip "$repo_root/target/debug/examples/roundtrip"
+go test "$repo_root/tests/reference/pprof-audit/reverse.go" "$repo_root/tests/reference/pprof-audit/reverse_test.go"
+go run "$repo_root/tests/reference/pprof-audit/reverse.go" --pprof "$build/pprof" --out "$out/reverse" \
+  --converter "$repo_root/target/debug/callgrind2pprof" --exporter "$repo_root/target/debug/examples/reference_export" \
+  --fixtures "$repo_root/tests/reference/fixtures" --generated "$out" "${sqlite_profiles[@]}"
 cd "$repo_root"
 git init "$build/kcachegrind"
 git -C "$build/kcachegrind" fetch --depth 1 https://github.com/KDE/kcachegrind.git 764dbf2cf5f44e1f982a231e472b9ed2f2b6cc14

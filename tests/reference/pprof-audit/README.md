@@ -29,6 +29,22 @@ sample paths, self costs and edge weights. GUI inclusivity/cycle heuristics are
 not the oracle. Exports and diagnostics survive failures. Unlike the hermetic
 SQLite/Nix gate, this pins Go/reader sources but uses Ubuntu's host Qt/C++ packages.
 
+For reverse-conversion checks, pass the directory of 12 raw SQLite files as
+the optional second argument to `scripts/check-pprof.sh`. CI downloads the
+successful SQLite job's retained corpus, selecting its latest available attempt
+so rerunning only the pprof job works too. Both converters see the same raw bytes
+used by the parser/annotator gate; no absolute host-specific totals are goldens.
+
+`reverse.go` independently reads the generated gzip with Go pprof, checks exact
+per-event sums and original function/source costs against the Rust production
+parser's TSV, validates labels/identities and the absence of invented mappings
+or stacks, then runs a real upstream `-top` report. Seven focused files (including
+two multipart files), 22 forward outputs and 12 SQLite profiles yield 41 files /
+43 part exports. The source corpus, parser TSV, gzip, top reports and diagnostics
+are retained. `reverse_test.go` verifies rejection of corrupted costs, identities,
+source attribution, events, stacks and addresses. Ordinary Cargo builds require
+neither Go nor Qt.
+
 ## Reproduce from the repository root
 
 Use Go 1.25 or later; the observed run used Go 1.27.1 linux-amd64.

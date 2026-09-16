@@ -13,8 +13,9 @@ and subtly incompatible reader.
 > The parser foundation is implemented with incremental decoding, an owned
 > interned model, and active grammar/property tests. `callgrind-annotate` now
 > provides plain-text reports, call trees and source annotation.
-> `pprof2callgrind` exports exact-integer graphs or context trees. The reverse
-> converter and UI applications remain stubs; full dialect support is not claimed.
+> `pprof2callgrind` exports exact-integer graphs or context trees;
+> `callgrind2pprof` exports exact exclusive-cost flat profiles. UI applications
+> remain stubs; full dialect support is not claimed.
 
 ## Annotate a profile
 
@@ -37,6 +38,15 @@ default keeps inline-attributed costs with their defining function;
 
 See [the converter guide](crates/pprof2callgrind/README.md) for exact costs,
 identity/metadata policies and compatibility boundaries.
+
+## Export to pprof
+
+```console
+./scripts/cargo.sh run -p callgrind2pprof --locked --offline -- profile.callgrind -o profile.pb.gz
+```
+
+See [the reverse converter guide](crates/callgrind2pprof/README.md). It preserves
+self costs and all columns, without inventing caller stacks or runtime mappings.
 
 ## Why this exists
 
@@ -75,7 +85,7 @@ Callgrind format well when Callgrind is the right producer.
 | --- | --- |
 | `callgrind-parser` | The primary library: parse Callgrind files into a shared data model and expose analysis primitives. |
 | `callgrind-annotate` | A compatible, scriptable Rust alternative to `callgrind_annotate`. |
-| `callgrind2pprof` | Convert Callgrind data for use with pprof-compatible tools. |
+| `callgrind2pprof` | Exact exclusive-cost Callgrind export to flat pprof profiles. |
 | `pprof2callgrind` | Exact pprof graph/context-tree export with all value columns. |
 | `pprof-profile` | Shared schema and bounded protobuf/gzip I/O. |
 | `callgrind-writer` | Streaming writer with explicit identities and absolute positions. |
@@ -129,9 +139,10 @@ A separate Nix job profiles SQLite, validates all 12 raw profiles, compares
 both annotators and retains reports/logs as CI artifacts. Passing the fast
 checks alone does not establish native integration parity.
 
-A third job cross-reads pprof using pinned upstream Go code and compares
-converted graphs/trees with pinned KCachegrind libcore. Its Qt dependency is
-installed only on the CI runner; everyday Rust development remains unchanged.
+A third job cross-reads both conversions using pinned upstream Go code and
+compares graphs/trees with pinned KCachegrind libcore. It follows the SQLite job
+to reuse its exact raw profiles for reverse-conversion conservation checks.
+Qt/Go are CI dependencies; everyday Rust development remains unchanged.
 
 ### Native integration
 

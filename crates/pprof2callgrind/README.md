@@ -72,5 +72,6 @@ agree; GUI inclusive/cycle heuristics are excluded. Known input stacks also
 constrain exact self costs, edge weights and tree paths independently.
 See [the gate](../../tests/reference/pprof-audit/README.md).
 
-`callgrind2pprof` remains a separate, unimplemented reverse converter. Shared
-`pprof-profile` and `callgrind-writer` are reusable building blocks.
+[`callgrind2pprof`](../callgrind2pprof/README.md) provides separate flat
+exclusive-cost reverse conversion; it does not reconstruct caller stacks.
+Shared `pprof-profile` and `callgrind-writer` are reusable building blocks.

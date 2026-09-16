@@ -158,6 +158,7 @@ pub fn write(profile: &proto::Profile, writer: impl Write) -> Result<(), Error> 
         .mtime(0)
         .write(writer, Compression::default());
     encoder.write_all(&profile.encode_to_vec())?;
-    encoder.finish()?;
+    let mut output = encoder.finish()?;
+    output.flush()?;
     Ok(())
 }

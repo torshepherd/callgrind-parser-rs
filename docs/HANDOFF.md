@@ -1,4 +1,4 @@
-# Fresh-session handoff: pprof2callgrind implemented
+# Fresh-session handoff: both converters implemented
 
 Updated 2026-09-16. Repository: `torshepherd/callgrind-parser-rs`.
 Default branch verified for this update: **master**. Resolve it again when resuming.
@@ -10,9 +10,8 @@ The parser, durable reference harness and plain-text annotator are implemented.
 integration CI is implemented and verified green. Following the pprof audit,
 the user prioritized **pprof2callgrind**, now implemented with exact graph/tree
 modes and shared pprof I/O. Read [its guide](../crates/pprof2callgrind/README.md).
-Next, implement the first
-exclusive-cost `callgrind2pprof` converter, then shared analysis for `textgrind`
-and `webgrind`.
+The exact exclusive-cost `callgrind2pprof` converter is now implemented too.
+Next is shared analysis for `textgrind` and `webgrind`.
 
 Read [AGENTS.md](../AGENTS.md) first, then this document. Implementation details
 and commands live in [the workload guide](../workload/README.md),
@@ -32,12 +31,14 @@ CI reports failures after the push and does not automatically roll back.
 
 Three separate Ubuntu 24.04 jobs run:
 
-- Fast Rust/Python: pinned bootstrap, formatting, Clippy, 155 nextest tests,
+- Fast Rust/Python: pinned bootstrap, formatting, Clippy, 169 nextest tests,
   Cargo tests/doctests, and 36 Python tests. No custom cache is required.
 - Pprof/KCachegrind: pinned Go/pprof and unmodified native reader; 12 input
   profiles, Rust gzip cross-read, 22 graph/tree comparisons, input-derived
   stack/cost expectations. Native CI passed. Qt installation was
   permission-blocked locally; user approved running this check on Actions.
+  This job now follows SQLite to reuse its raw profiles and independently
+  validate 41 files / 43 reverse-converted parts with upstream pprof.
 - Nix SQLite integration: pinned SQLite 3.51.2 and Valgrind 3.26.0, two page-cache
   variants times six configurations, production-parser total validation, both
   annotators on the identical profile, sandboxed smoke, and complete flake check.
@@ -155,68 +156,46 @@ pass input-derived fixture checks. Native Qt checks run on CI, not this Work VM.
 Do not retry apt with sandbox bypasses. The user approved Actions instead and
 explicitly requires every intended change committed and pushed before handoff.
 
-## Next task: exclusive-cost reverse pprof converter
+## Completed slice: callgrind2pprof
 
-The crate already has `callgrind-parser`, `clap`, `prost`, and pure-Rust-backend
-`flate2` dependencies. Its one test round-trips a custom one-field
-`SmokeMessage` through gzip; **it is not conversion**. Reuse `pprof-profile`
-for the real schema/transport rather than maintaining another set of bindings.
+The reverse converter now implements the exact-self contract using the shared
+pprof schema and gzip I/O. See [its README](../crates/callgrind2pprof/README.md)
+for CLI, limits and detailed policies. Select one part explicitly if multipart.
+Only self costs become one-location samples; call edges/counts and jumps are
+excluded. All stored events retain exact integers; totals and locations must
+fit signed pprof range. Mismatched declared totals fail; summary is not a cost
+source. Standard counters use count; unknown/producer-dependent units stay
+callgrind_raw unless explicitly overridden without scaling.
 
-Start with [SOURCE-AUDIT.md, section 6](SOURCE-AUDIT.md) and
-[PPROF-CALLGRIND-AUDIT.md](PPROF-CALLGRIND-AUDIT.md). The latter pins upstream
-`6331bc6350fe55a6fec2957299e0581dd7510e36` and includes executable research
-probes: different stacks export to identical ordinary Callgrind bytes. Pprof
-computes inclusivity from supplied stacks; single-location samples deliberately
-have no callers. Its exporter is not a lossless oracle: zero call counts trip
-Perl, scaling/float conversion can lose exact values, and target addresses,
-cross-object edges and `call_tree` name wiring have reproduced problems.
-These are not reasons to weaken our parser or change counts to one. Use the
-upstream reader plus decoded per-event conservation, with a carefully scoped
-writer round trip. The Go probes now also participate in the forward converter's
-separate native CI gate; they are not reverse conversion. Recommended first scope:
+Object/defining-function/source identity receives deterministic qualified pprof
+names. Original strings and all position columns are sample labels; attributed
+source file and line also occupy native pprof fields. No runtime PC, mapping,
+build ID, inline chain or timing is invented. Missing and literal unknown names
+stay distinct. The flat-only limitation is explicit in both comments and stderr.
 
-1. Read through the production parser, choose one part explicitly (reuse the
-   annotator's user-facing zero-based part convention), and convert exclusive
-   self rows. Aggregate call edges do not establish full sampled stacks.
-   Use a single-location representation with documented lost call-path detail;
-   exclude inclusive edges from sample values.
-2. Define event names/units and source/instruction-location identity before
-   coding. Preserve object qualification and attributed source locations;
-   do not fabricate inline chains, runtime mappings, load addresses or build IDs.
-   Callgrind instruction addresses are not automatically runtime virtual addresses.
-3. Reuse `pprof-profile`'s attributed upstream schema and checked-in Prost
-   bindings. Preserve ordinary builds without requiring protoc.
-4. Aggregate with checked unsigned arithmetic, then validate signed protobuf
-   ranges before conversion. Check location IDs, string-table indexes and sample
-   widths against the chosen schema. Do not silently wrap, clamp or drop costs.
-5. Produce deterministic gzip/protobuf output for reproducible tests. Finalize
-   the encoder and propagate output errors. Document CLI and unsupported cases
-   in the converter README.
-6. Add focused tests for repeated locations, unknown names, object/path
-   collisions, line zero, instruction-only profiles, different event layouts,
-   zero counts, exact exclusive conservation, malformed input and signed-range
-   overflow. Multipart input must not be silently merged.
-7. Validate generated profiles with an independent pprof implementation, ideally
-   a pinned Go google/pprof reader/validator plus a report invocation. This is a
-   separate integration dependency, not a reason to require Go for ordinary
-   Cargo builds. A decode with our own Prost types is insufficient by itself.
-8. Convert the same SQLite raw profiles and compare per-event sample sums to
-   production-parser self totals. Declared summary can exceed visible self
-   costs; never substitute it as the conservation target.
+Local validation: 169 Rust tests, 36 Python tests, fmt/Clippy/Cargo gates; upstream
+Go readback and actual report commands passed for 41 files / 43 parts, including
+12 recovered SQLite profiles. The native CI job now follows SQLite to download
+and convert the exact newly validated corpus. Fresh expanded CI run pending.
 
-These are the proposed first implementation contract, not an already-written
-converter. Units for unusual events (notably sysTime), unknown positions,
-metadata/provenance and any schema-binding dependency need explicit decisions
-in the converter docs. Verify the upstream schema/validator while implementing.
-Any later full-stack allocation is a separately named approximation.
+## Next task: shared UI analysis
 
-**Done means:** documented working CLI, focused Rust tests, independent pprof
-validation, same-input exclusive-cost conservation, required Rust gates, and a
-commit preserving history. Record native/CI/Nix coverage separately.
+Build a reusable analysis crate for textgrind/webgrind before either UI:
+explicit import/part/thread selection, provenance, event-name remapping, checked
+aggregates, source/instruction indexes, reverse calls and exact SCCs. Preserve
+zero-count edges and keep raw self/call/jump costs separate. Define the analysis
+API with focused tests, then build terminal and browser views on it. Benchmark
+before replacing parser storage. UI rendering is not constrained to the
+annotator's deliberately barebones text.
+
+Full-stack allocation from Callgrind remains a separately designed approximation,
+not an unfinished step in the exact flat converter. The ambiguity proof in
+PPROF-CALLGRIND-AUDIT.md still applies. Never describe the converters as lossless
+inverses. Both share pprof-profile; do not create duplicate protobuf bindings.
 
 ## Later work and established boundaries
 
-Shared UI analysis comes after the converter: explicit selection/import
+Shared UI analysis is next: explicit selection/import
 provenance, event-name remapping, checked aggregation, source/instruction indexes,
 reverse edges and exact SCCs. Keep raw self, call and jump quantities separate.
 Do not make either UI depend on the annotator's presentation policy. Benchmark
@@ -236,4 +215,4 @@ Extracted Qt prefixes need transitive runtime libraries as well as headers.
 
 Optional annotate extensions (derived events, full source-output goldens,
 multipart aggregation, cycle-aware views) can wait. They do not need to block
-the first pprof converter or trigger a parser rewrite.
+UI analysis or trigger a parser rewrite.

@@ -6,6 +6,43 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-16: exact flat callgrind2pprof
+
+- User requested the reverse converter and expects every intended change committed
+  and pushed. The Work VM had reverted to a pre-publication snapshot; GitHub still
+  had verified forward converter tip `4725612805455c5733d72fcd29b461269e415b48`.
+  Restored a separate inspection checkout and verified all 109 remote blob hashes
+  and modes. Preserved the stale directory rather than overwrite its working files.
+- Implemented library plus CLI using the production parser and shared pprof I/O.
+  One selected part; self rows only; duplicate locations coalesce deterministically.
+  Every stored event survives unscaled. Individual/aggregate/profile totals and
+  source lines must fit i64; global bound prevents downstream pprof sum overflow.
+  Declared totals mismatch is an error. Summary is descriptive, never cost input.
+- Function identity includes object, defining file/name and attributed source file.
+  Qualified names prevent pprof display aggregation collisions. Source attribution
+  can split one defining function across pprof function entries; never fabricate an
+  inline chain. Native locations have one line and zero address/no mapping.
+  All original positions, including unsigned 64-bit PCs, survive as string labels.
+  Original strings use v: prefix labels to preserve empty values unambiguously.
+  Known standard counters use count; sysTime/cache-use/custom units default to
+  callgrind_raw with warnings. Explicit --unit overrides declare units, never scale.
+- CLI accepts stdin and gzip stdout, --part, --unit, input/location limits; refuses
+  overwrite and validates before creating output. Shared gzip writer now flushes
+  its underlying writer after finalization so buffered output errors propagate.
+- Fourteen converter tests replace the one-field transport smoke test; an extra
+  shared flush regression brings the workspace to 169 Rust tests. Python remains
+  36. New Go oracle has negative mutation checks. Local independent Go pprof readback
+  and actual top reports passed on 41 files / 43 parts, including the recovered
+  12-profile SQLite corpus; compares exact event sums and function/source rows.
+- Expanded pprof CI waits for the existing SQLite/Nix job, downloads its artifact,
+  and converts exactly those files plus 7 focused fixtures and 22 forward outputs.
+  Pinned download-artifact v8.0.1; pick latest available artifact attempt so a rerun
+  of only the pprof job works. Retain parser TSV/gzip/reports/diagnostics. Existing
+  22 KCachegrind comparisons and 93 SQLite annotate comparisons stay intact.
+  Fresh expanded CI run pending. Qt/Nix continue running only on Actions.
+- Next: shared UI analysis, then textgrind/webgrind. Exact caller-stack recovery
+  is impossible in general; a future allocation mode must name its approximation.
+
 ### 2026-09-16: exact pprof2callgrind implementation
 
 - After the exporter audit, user prioritized implementing our own forward

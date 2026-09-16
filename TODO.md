@@ -6,14 +6,6 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
-- [ ] **Implement the first callgrind2pprof converter.** Export exact exclusive
-  costs from a selected part using the real pprof schema, checked signed-range
-  conversion and deterministic gzip/Prost output. Document event units and
-  location policy; do not invent full stacks or binary metadata. Test same-input
-  conservation and validate with an independent pprof reader. Existing
-  `SmokeMessage` tests cover transport only. See the handoff's implementation
-  contract and [pprof source audit](docs/PPROF-CALLGRIND-AUDIT.md) before choosing
-  schema dependencies or treating its Callgrind exporter as a test oracle.
 - [ ] **Build shared analysis for textgrind/webgrind.** Explicit import/part/thread
   selection and provenance, event-name remapping, checked aggregates, source/
   instruction indexes, reverse calls and exact SCCs. Preserve zero-count edges
@@ -22,12 +14,20 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Completed milestones
 
+- [x] `callgrind2pprof`: exact exclusive-cost flat export, explicit part/units,
+  identity and original-position labels, deterministic validated gzip, checked
+  signed ranges. Fourteen Rust regressions replace the transport-only stub test;
+  shared gzip flushing has another regression. Local upstream readback/report
+  validation passed on 41 files / 43 parts, including 12 recovered SQLite files.
+  Expanded same-corpus native CI is implemented; first fresh run pending.
+  See [the guide](crates/callgrind2pprof/README.md).
+
 - [x] `pprof2callgrind`: complete shared pprof bindings/I/O, reusable writer,
   exact multi-event graph and context-tree modes, 19 new Rust tests. Local
   workspace: 155 Rust / 36 Python tests; upstream pprof cross-read passed.
   Independent KCachegrind CI gate: 22 comparisons passed; all three jobs green
   in [run 35049704415](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35049704415).
-  Reverse `callgrind2pprof` remains next; reuse `pprof-profile`.
+  Shared `pprof-profile` is now used by both converters.
 
 - [x] Pprof Callgrind exporter source audit: pinned implementation, four upstream
   test packages, 12 synthetic profiles and 32 real CLI probes. Reproduced

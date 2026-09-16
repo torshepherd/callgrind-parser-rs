@@ -116,15 +116,18 @@ The parser has an incremental decoder, an owned interned model, and active
 conformance, property, and streaming tests. `callgrind-annotate` implements
 plain-text reports, call trees and source annotation. `pprof2callgrind` implements
 exact graph/tree export; read its README before changing conversion policy.
-The reverse converter and UI frontends remain stubs.
+`callgrind2pprof` exports exact flat exclusive-cost samples; read its README for
+unit, identity and original-position labels. UI frontends remain stubs.
 Read `crates/callgrind-annotate/README.md` before changing its policies.
 Keep rendering barebones like the original: aligned text, no colors or TUI.
 Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
 limits, and validation evidence. The Callgrind/KCachegrind source audit is in
 `docs/SOURCE-AUDIT.md`. The 12-profile SQLite integration, both annotators and
-CI/Nix gates are verified; the exclusive-cost reverse pprof converter is next.
-Reuse `pprof-profile`, not another schema. The separate pprof/KCachegrind job
-cross-reads upstream pprof and raw native reader output. Use
+CI/Nix gates are verified; shared analysis for textgrind/webgrind is next.
+Reuse `pprof-profile`, not another schema. The pprof/KCachegrind job follows
+SQLite, downloads that run's profiles, cross-reads both conversions with upstream
+pprof and compares raw native reader output. Never claim full-stack recovery
+from the flat reverse converter. Use
 `docs/HANDOFF.md` for the current recovery and implementation contract.
 The durable same-file harness is in `tests/reference/README.md`. Do not claim
 complete format/frontend conformance from passing unit tests. Annotator
