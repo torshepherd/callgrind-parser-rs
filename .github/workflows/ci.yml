@@ -45,9 +45,14 @@ jobs:
           mkdir -p results
           set -o pipefail
           # A rerun of only this job can reuse an earlier successful SQLite attempt.
-          mapfile -t corpora < <(find "$PWD/sqlite-input" -mindepth 1 -maxdepth 1 -type d -name 'callgrind-sqlite-*' | sort -V)
-          (( ${#corpora[@]} > 0 ))
-          corpus="${corpora[-1]}"
+          if [[ -d "$PWD/sqlite-input/profiles" ]]; then
+            # download-artifact v8 flattens a single matching artifact.
+            corpus="$PWD/sqlite-input"
+          else
+            mapfile -t corpora < <(find "$PWD/sqlite-input" -mindepth 1 -maxdepth 1 -type d -name 'callgrind-sqlite-*' | sort -V)
+            (( ${#corpora[@]} > 0 ))
+            corpus="${corpora[-1]}"
+          fi
           bash scripts/check-pprof.sh "$PWD/results/pprof" "$corpus/profiles" 2>&1 | tee results/pprof.log
       - name: Upload inputs, converted profiles and reader reports
         if: always()

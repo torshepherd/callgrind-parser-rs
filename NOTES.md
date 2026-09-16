@@ -43,8 +43,13 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 - First expanded run `35088328654` exposed a CLI test harness race: invalid
   --unit is rejected before stdin consumption, so the parent's write can return
   BrokenPipe depending on scheduling. The helper now accepts only BrokenPipe
-  paired with child failure and still checks stderr/stdout/status; a 1 MiB invalid
+  paired with child failure and still checks stdout/status; a 1 MiB invalid
   invocation exercises early exit reliably. No production semantics changed.
+- Follow-up `35088731702` passed Rust/Python and complete SQLite/Nix. The dependent
+  job exposed download-artifact v8's single-match flattening (despite pattern and
+  merge-multiple=false): files land directly in sqlite-input. Accept that layout
+  as well as per-artifact directories when several attempts are downloaded.
+  Verified both selector branches locally; no converter changes were required.
 - Next: shared UI analysis, then textgrind/webgrind. Exact caller-stack recovery
   is impossible in general; a future allocation mode must name its approximation.
 
