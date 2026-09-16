@@ -189,6 +189,15 @@ and convert the exact newly validated corpus. Expanded native CI passed on
 
 ## Next task: shared UI analysis
 
+Read [INCLUSIVE-COST-DESIGN.md](INCLUSIVE-COST-DESIGN.md) before implementing
+inclusive metrics or cycle views. The design pass is complete; implementation
+is still pending. Default: exact SCCs over selected recorded edges; component
+inclusive = component self + outgoing boundary costs. Expanded cycle members
+show self and contribution, with individual inclusive explicitly unavailable.
+Keep raw internal edges and annotator compatibility policies separate. The
+note specifies selection/event coverage, API/UI behavior and acceptance tests;
+no measured stack reconstruction or heuristic cycle cutting is implied.
+
 Build a reusable analysis crate for textgrind/webgrind before either UI:
 explicit import/part/thread selection, provenance, event-name remapping, checked
 aggregates, source/instruction indexes, reverse calls and exact SCCs. Preserve

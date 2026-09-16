@@ -206,8 +206,12 @@ a universal identity that our parser should enforce. [Implementation][inclusive]
 
 For multiple-function cycles it uses Tarjan-style strongly connected components
 and a configurable cost-based edge cut. The cut uses the first real event and
-a base from incoming edge costs (or inclusive cost). Cycle detection is thus
-partly heuristic, not solely graph topology. It constructs synthetic calls
+a base from incoming edge costs (or inclusive cost). **Follow-up clarification
+(2026-09-16):** the base is the maximum incoming edge cost and the configured
+cutoff defaults to 0.0, so cost-based cutting is optional, not always active.
+See [globalconfig.cpp](https://github.com/KDE/kcachegrind/blob/764dbf2cf5f44e1f982a231e472b9ed2f2b6cc14/libcore/globalconfig.cpp#L20-L27).
+The [inclusive-cost design](INCLUSIVE-COST-DESIGN.md) traces cycle/member
+accounting and specifies the default shared-analysis policy. It constructs synthetic calls
 from a cycle node to its members. Member inclusive displays exclude internal
 cycle edges, and cycle self cost is the sum of member self costs.
 [Cycle detection and update][cycles]

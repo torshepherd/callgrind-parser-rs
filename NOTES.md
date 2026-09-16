@@ -6,6 +6,33 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-16: inclusive-cost and cycle design for the shared analysis layer
+
+- User requested a deeper design pass before implementation, with findings
+  committed and pushed. Added docs/INCLUSIVE-COST-DESIGN.md: source trace,
+  formulas, worked examples, UI/API contract and acceptance criteria.
+- Recommended default: exact SCCs on explicitly selected recorded call edges;
+  component inclusive = summed self + recorded outgoing boundary costs.
+  Internal edges stay queryable but are not repeatedly added. Expanded members
+  show self and contribution; individual inclusive is unavailable for members
+  of a multi-function SCC. Contributions exactly partition the group formula.
+- Structural cycles can arise from independent nonrecursive contexts or a union
+  of parts/threads. They do not prove recursion occurred on a measured stack.
+  Never propagate a callee's global inclusive cost back to every caller.
+- Re-read pinned KCachegrind TracePartFunction/TraceFunction/TraceCall/cycle
+  code and globalconfig.cpp. Correction: optional cycle cutoff defaults to 0.0;
+  default show-cycles is true. Exact compatibility additionally needs per-part
+  caller-count branching and attention to stored versus selected graph edges.
+  Existing raw native comparisons disable cycles, so they do not validate a
+  cycle-display compatibility mode. This pass did not execute that native UI.
+- Preserve annotator policies; no production code changed. Checked the four
+  numerical/topological design examples locally. Missing event coverage stays
+  unavailable; costs/counts use checked u128; no inferred stack allocation,
+  fabricated calls, count-based edge dropping or silently capped percentages.
+- Prior docs-only push fd6c191 passed all CI (run 35125949458). Implementation
+  evidence remains in SMOKE-TEST.md. Next task remains implementing the shared
+  analysis crate against this design, then textgrind and webgrind.
+
 ### 2026-09-16: exact flat callgrind2pprof
 
 - User requested the reverse converter and expects every intended change committed

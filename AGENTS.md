@@ -94,6 +94,9 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
   A zero call count can accompany nonzero inclusive cost after a dump. Preserve
   these edges. Do not treat reference annotator output as a universal oracle,
   or bake KCachegrind's cycle/inclusive display heuristics into raw parsing.
+  Before implementing shared analysis/UI inclusive metrics, read
+  `docs/INCLUSIVE-COST-DESIGN.md` for the selected-graph SCC, boundary-cost and
+  member-contribution contract; its implementation is still pending.
 - Tests must be deterministic, non-interactive, and network-independent.
 - Nix must declare native tools and system dependencies explicitly. A passing
   ambient `cargo test` is not evidence that a Nix build is complete.

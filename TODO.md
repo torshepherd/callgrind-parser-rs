@@ -10,7 +10,10 @@ harness and plain-text annotator are committed; implementation baseline is
   selection and provenance, event-name remapping, checked aggregates, source/
   instruction indexes, reverse calls and exact SCCs. Preserve zero-count edges
   and raw costs. Keep presentation heuristics optional; benchmark before
-  replacing storage. Then implement the terminal/browser interfaces.
+  replacing storage. Follow [the inclusive-cost design](docs/INCLUSIVE-COST-DESIGN.md):
+  component self plus outgoing boundary costs, explicitly labeled member
+  contributions, selected-graph SCCs and documented acceptance cases. Then
+  implement the terminal/browser interfaces.
 
 ## Completed milestones
 
