@@ -71,6 +71,27 @@ harness and plain-text annotator are committed; implementation baseline is
   formulas and old Xdebug costs. Keep explicit rejections until each feature
   has a model and regression tests.
 
+## Upstream comparison survey (low priority)
+
+Contrast other Callgrind-format readers; extract anything the audits missed.
+Expect little: all three are small, dated, or likely low-effort.
+
+- [ ] https://github.com/compor/CallgrindParser — old PHP project; likely
+  little to gain.
+- [ ] https://github.com/subroy13/callgrind-reader — ~3 years old; worth
+  contrasting only.
+- [ ] https://github.com/yaowubarbara/callgrind-parser — recent (~5 months),
+  Rust, likely AI-generated; interesting only if it surprises us. Avoid
+  getting distracted by it.
+
+## Local machine work (this host, before returning to ChatGPT sessions)
+
+- [ ] Set up local crates.io publishing. `cargo login` is already done on
+  this machine; publish the parser crate when ready.
+- [ ] Set up a GitHub Actions workflow to publish to crates.io.
+- [ ] Set up GitHub Actions with cargo-dist (or equivalent) so the repo is
+  `cargo binstall`-friendly.
+
 Record decisions, findings and papercuts in `NOTES.md`. Update this checklist
 and the handoff when a gate's actual status changes; historical experiments
 must not appear as current missing work.
