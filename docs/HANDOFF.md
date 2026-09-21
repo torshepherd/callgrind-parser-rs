@@ -1,6 +1,7 @@
 # Fresh-session handoff: both converters implemented
 
-Updated 2026-09-16. Repository: `torshepherd/callgrind-parser-rs`.
+Updated 2026-09-21 (frontend planning; implementation/validation unchanged).
+Repository: `torshepherd/callgrind-parser-rs`.
 Default branch verified for this update: **master**. Resolve it again when resuming.
 
 ## Start here
@@ -12,6 +13,19 @@ the user prioritized **pprof2callgrind**, now implemented with exact graph/tree
 modes and shared pprof I/O. Read [its guide](../crates/pprof2callgrind/README.md).
 The exact exclusive-cost `callgrind2pprof` converter is now implemented too.
 Next is shared analysis for `textgrind` and `webgrind`.
+
+Before selecting UI or binary-tooling dependencies, read the
+[2026-09-21 discussion](../NOTES.md#2026-09-21-frontend-remote-workflow-binary-tooling-and-testing-discussion).
+The user wants requirements/tradeoffs discussed before fixing the stack. The
+core use case is a remote profiling box: webgrind through SSH port forwarding
+to a local browser, or textgrind directly over SSH. Initial loading uses CLI
+paths; opening files in a running UI is deferred. Performance target is as good
+as or better than KCachegrind, to be measured on identical profiles including
+combined server/browser memory and SSH latency. Axum is the user's proposed
+backend; frontend, binary tooling and test frameworks remain unselected.
+Preferred KCachegrind views, platform/architecture scope and packaging tradeoffs
+are open discussion items. Both UIs remain stubs; no new performance/UI test
+results are implied by these notes.
 
 Read [AGENTS.md](../AGENTS.md) first, then this document. Implementation details
 and commands live in [the workload guide](../workload/README.md),

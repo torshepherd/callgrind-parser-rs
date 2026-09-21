@@ -6,6 +6,17 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Next, in order
 
+- [ ] **Finish the frontend requirements discussion before fixing the stack.**
+  See [the 2026-09-21 working notes](NOTES.md#2026-09-21-frontend-remote-workflow-binary-tooling-and-testing-discussion).
+  Confirm priority KCachegrind views, host/binary architecture and format scope,
+  and external-tool packaging tradeoffs. Core workflow: remote webgrind via SSH
+  port forwarding or textgrind directly over SSH; startup paths first. Axum is
+  the user's proposed backend; frontend, resolver/disassembler and test packages
+  remain candidates, not finalized choices.
+- [ ] Establish a same-profile KCachegrind performance baseline and corpus:
+  loading, peak/steady memory (server plus browser), navigation/filtering and
+  responsiveness under SSH latency. Target as good or better than KCachegrind;
+  choose numerical budgets after measuring, not an invented file-size limit.
 - [ ] **Build shared analysis for textgrind/webgrind.** Explicit import/part/thread
   selection and provenance, event-name remapping, checked aggregates, source/
   instruction indexes, reverse calls and exact SCCs. Preserve zero-count edges
@@ -61,6 +72,9 @@ harness and plain-text annotator are committed; implementation baseline is
 
 ## Deferred extensions
 
+- [ ] Open/change profiles and associated assets from an already running web UI.
+  Reuse the startup loader; remote filesystem browsing is the natural SSH
+  workflow. Uploading browser-local files is a distinct feature, not assumed.
 - [ ] Port the Python reference comparison harness and its tests to Rust.
   User prefers an all-Rust project eventually; Python is accepted for now.
   Preserve same-file comparisons and all existing failure/normalization checks.

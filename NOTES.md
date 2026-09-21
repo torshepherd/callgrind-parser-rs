@@ -6,6 +6,204 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-21: frontend, remote workflow, binary tooling and testing discussion
+
+Status: requirements and candidate tradeoffs, **not a finalized stack**. The
+user explicitly asked to discuss what matters before fixing decisions that
+force particular frameworks or systems. This notes update is authorized; it
+does not authorize treating every assistant suggestion below as a user choice.
+Both UI crates are still stubs. Shared analysis is still unimplemented; the
+existing [inclusive-cost contract](docs/INCLUSIVE-COST-DESIGN.md) remains the
+semantic starting point. No code, dependency or benchmark changes in this pass.
+
+#### Confirmed purpose and initial loading scope
+
+The user's core motivation is profiling on an SSH box while investigating
+from the local development machine. Two desired form factors:
+
+1. Run webgrind on the remote box and forward its port to a local browser.
+2. Run textgrind on the remote box directly over SSH.
+
+Profiles, binaries, debug information and source can therefore remain on the
+remote box. A local Mac browser viewing Linux ELF data does not itself require
+Mach-O support. Host-platform support and inspected-binary formats/architectures
+are separate questions; neither support matrix has been selected yet.
+
+The user proposed Axum for the backend and CLI-supplied paths at startup:
+profile, binaries for disassembly, debug information for symbolization, and
+source files/directories. This approximates the setup normally done through
+KCachegrind's File > Open workflow. Opening files from an already running UI is
+explicitly a later goal. Exact flags and path configuration formats are open.
+
+Assistant recommendation: only the profile should be required; binaries, debug
+files and source are optional enrichment. Callgrind often already records names
+and source locations. Missing enrichment must leave cost/navigation views
+useful. Equivalent loading options should serve both commands, including
+object-to-local-binary mappings, debug search locations and source-path remaps.
+Design the loader so a later UI can reuse it without restarting the process.
+
+A future Open dialog should naturally browse the **server's filesystem** for
+this workflow. A browser-native file picker selects/uploads files from the
+browser's machine; that is a different feature, not the assumed implementation
+of remote Open. Hosted multiuser service design and upload/session management
+are not the current target.
+
+#### Proposed structure and consequences of the SSH workflow
+
+- Shared Rust analysis and source/binary resolution beneath both frontends.
+  Axum exposes queries for the browser; textgrind calls the Rust code directly,
+  without requiring an HTTP server. Responsibility boundaries do not yet fix
+  the number of crates or the API's public types.
+- Proposed default: webgrind listens on remote loopback, reached by SSH port
+  forwarding. Serve all browser assets, including JS, CSS, fonts and icons,
+  locally; the investigation should work without a CDN/internet connection.
+- Keep the full dataset and expensive analysis on the remote box. Send bounded
+  tables, selected graph neighborhoods and source/disassembly windows rather
+  than serializing the entire profile into the browser.
+- Account for SSH latency: fetch useful view chunks, cache results and avoid
+  one network request per row or keystroke. Keep the interface responsive while
+  expensive work happens. Exact pagination, caching, cancellation and scheduling
+  mechanisms remain open.
+- Do not couple either renderer to the other's framework, duplicate parser or
+  cost semantics in UI code, or prematurely replace the existing data model.
+
+These are architectural recommendations from the discussion, not implemented
+or benchmark-validated guarantees.
+
+#### Performance target: as good as or better than KCachegrind
+
+Asked about typical profile sizes, the user said: "I'd like to do as good or
+better than kcachegrind." Do not invent a maximum file size or require the user
+to estimate one. Use KCachegrind as the measured baseline.
+
+The discussed comparison plan covers:
+
+- Loading: time until investigation can begin, as well as full load/index time.
+- Memory: peak during loading and steady-state use. For webgrind count **both
+  server and browser**, rather than hiding cost in the second process.
+- Interaction: sorting/filtering, event and part changes, caller/callee
+  navigation, and opening source/assembly; continued responsiveness during work.
+- Remote behavior: measure the browser through simulated SSH latency, not only
+  localhost, so an apparently fast implementation does not fail the core use case.
+
+Compare identical profiles across KCachegrind, webgrind and textgrind, with
+comparable operations and explicit measurement conditions. Build a reproducible
+corpus varying function count, edges, instruction detail, event columns and
+parts; byte size alone is insufficient. Start with generated workloads, add
+real user profiles when available, and baseline before setting numeric budgets.
+No new performance results or parity claims exist yet. Benchmark current
+storage before changing it, and exercise candidate UI components on substantial
+datasets before making framework decisions.
+
+#### Frontend candidates and unresolved interaction priorities
+
+React + TypeScript + Vite and Svelte + TypeScript were suggested for comparison.
+React was an assistant starting candidate for a dense explorer, not a user
+selection. TanStack Table plus a separate virtualizer is one table option:
+[Table does not include virtualization itself][ui-table]. Keep domain work in
+Rust regardless of which frontend wins. No framework/version/package-manager,
+component suite, graph renderer or docking library is selected.
+
+The unanswered product question is which KCachegrind interactions the user
+actually relies on: function ranking, callers/callees, source, assembly, call
+graph, treemap, and what feels cumbersome or missing. Linked tables/source
+panes, a graph canvas, and a docking workspace impose different requirements.
+Prioritize concrete workflows before choosing the first UI slice and evaluating
+frameworks. Earlier assistant preference for tables/source first is provisional.
+
+#### Binary/debug/source tooling: separate jobs and candidate tradeoffs
+
+Keep these responsibilities distinct:
+
+1. Find the correct executable/shared object and corresponding debug information.
+2. Map an address to symbol, file/line and inline frames.
+3. Decode instruction bytes for disassembly.
+4. Resolve the recorded source path and read actual source text.
+
+The user raised gimli and blazesym. They are not equivalent abstraction levels:
+[addr2line][ui-addr2line] builds on gimli and offers DWARF address-to-location/
+function/inline-frame queries; [blazesym][ui-blazesym] has a broader symbolization
+interface including process/container resolution. Compare higher-level offline
+lookup options before deciding direct DWARF manipulation is needed. `object`
+is a candidate for object-file/section access; no resolver stack is selected.
+Investigate separate/split debug-file lookup and correct asset matching as part
+of that comparison rather than assuming all debug packaging works automatically.
+
+Disassembly is independent of symbolization. [iced-x86][ui-iced] is a candidate
+for x86/x64; [Capstone's Rust bindings][ui-capstone] are another candidate when
+broader architecture coverage matters. Calling installed LLVM/binutils tools
+is easy to prototype but adds executable/version/output handling; embedding
+libraries gives more controlled behavior but can add native build/packaging
+dependencies. A self-contained release was an assistant preference; whether
+external tools are acceptable and which architectures matter remain unanswered.
+Do not introduce new system dependencies without reconciling existing build
+invariants and the reproducible Nix/native-tool setup.
+
+Preserve the findings in [SOURCE-AUDIT.md](docs/SOURCE-AUDIT.md): Valgrind's
+instruction positions use the object's linked address space, not automatically
+runtime virtual addresses or file offsets. Qualify addresses by object and
+verify interpretation before resolving/decoding. Other producers may require
+different interpretation; do not blindly apply a Valgrind assumption to all
+Callgrind inputs. Debug info enriches metadata; it cannot recover measured
+instruction costs from line-only profiling data. Keep observed profile data
+distinct from supplementary metadata, and keep file access out of the parser.
+
+#### Testing candidates and intended layers
+
+| Layer | Intended coverage / candidates |
+| --- | --- |
+| Shared Rust analysis | Exact costs, selection, cycles, source/instruction attribution; reuse existing fixtures and reference infrastructure |
+| UI state | Navigation, filtering, selection and history independently of rendering |
+| Rendering | Layout, truncation, missing-data states; Ratatui TestBackend + insta is the documented TUI starting point |
+| Full applications | Actual startup, input, resizing, loading, shutdown and terminal restoration; browser tests against the real backend |
+
+The user suggested terminal emulation, possibly libghostty-vt. The research
+found Ratatui's [snapshot recipe][ui-ratatui] documents TestBackend + insta and
+also links [termlens][ui-termlens] for real-binary PTY tests against an emulated
+screen. Termlens currently uses vt100 and supplies process management, input,
+bounded waits and screen assertions. It is a candidate to investigate before
+building a custom harness, not a dependency decision or validated compatibility
+claim for this repo.
+
+[libghostty-vt][ui-ghostty] provides terminal parsing/state through C/Zig APIs;
+it is an emulator component, not a complete testing harness. Evaluate it against
+the actual terminal protocols/behavior needed and the integration/build cost.
+A few full-process flows should complement fast state/rendering tests, rather
+than making all tests depend on an emulator. TestBackend alone does not exercise
+the real terminal lifecycle or event loop. Keep waits bounded and condition-based.
+
+For the browser, [Vitest Browser Mode][ui-vitest] and [Playwright][ui-playwright]
+were candidate component and end-to-end tools. Backend query behavior should
+also be testable independently of the browser. Framework choice and exact test
+dependencies remain open; existing deterministic, network-independent test
+requirements apply. No candidate framework has been installed or run here.
+
+#### Next discussion and validation status
+
+Resolve preferred KCachegrind views/first workflow, binary architectures/formats
+and remote host support, and acceptability of external tools. Establish the
+performance corpus/baseline, then choose concrete libraries against those needs.
+Keep remote UI file opening on the deferred list. The prior inclusive-cost
+semantics remain in force; this discussion does not reopen or implement them.
+
+Inspected the current remote default branch (`master`, base `0b51303`), working
+notes, TODO, handoff, manifests/stubs, source audit and inclusive-cost design.
+Read primary library documentation linked below during the discussion; these
+are research references, not pinned implementation dependencies. This update
+records the discussion only; no new Rust/native/UI tests or benchmarks are
+claimed. Documentation diff and local links are checked before publication.
+
+[ui-table]: https://tanstack.com/table/v8/docs/guide/virtualization
+[ui-addr2line]: https://github.com/gimli-rs/addr2line
+[ui-blazesym]: https://docs.rs/blazesym/latest/blazesym/symbolize/index.html
+[ui-iced]: https://github.com/icedland/iced
+[ui-capstone]: https://github.com/capstone-rust/capstone-rs
+[ui-ratatui]: https://ratatui.rs/recipes/testing/snapshots/
+[ui-termlens]: https://github.com/vyncint/termlens
+[ui-ghostty]: https://github.com/ghostty-org/ghostling
+[ui-vitest]: https://vitest.dev/guide/browser/
+[ui-playwright]: https://playwright.dev/docs/test-webserver
+
 ### 2026-09-16: inclusive-cost and cycle design for the shared analysis layer
 
 - User requested a deeper design pass before implementation, with findings
