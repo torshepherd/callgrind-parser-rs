@@ -25,6 +25,10 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
   tests, Cargo tests/doctests, 36 comparator tests, five release-gate tests,
   workspace rustdoc, dist plan and actionlint passed. Native CI, first uploads
   and the four-platform binary workflow still need to run for this slice.
+- The four-platform binary dry run passed in
+  [run 35795985508](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35795985508).
+  A direct release-plz configuration check found that unpublished stubs require
+  both `release = false` and `publish = false`; corrected both entries.
 
 ### 2026-09-22: experimental status and documentation provenance
 

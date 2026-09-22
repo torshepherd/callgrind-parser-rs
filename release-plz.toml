@@ -7,7 +7,9 @@ git_tag_name = "{{ package }}-v{{ version }}"
 [[package]]
 name = "textgrind"
 release = false
+publish = false
 
 [[package]]
 name = "webgrind"
 release = false
+publish = false
