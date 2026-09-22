@@ -1,5 +1,5 @@
 [package]
-name = "callgrind-annotate"
+name = "callgrind-annotate-rs"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

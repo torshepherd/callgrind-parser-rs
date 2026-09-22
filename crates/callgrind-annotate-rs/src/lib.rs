@@ -51,7 +51,7 @@ pub enum Grouping {
 
 /// A Rust annotator. Cost parsing is exclusively provided by callgrind-parser.
 #[derive(Parser, Clone, Debug)]
-#[command(version, about, name = "callgrind-annotate")]
+#[command(version, about, name = "callgrind-annotate-rs")]
 pub struct Options {
     /// Recorded events to display, in the requested order.
     #[arg(long)]

@@ -66,7 +66,7 @@ harness and plain-text annotator are committed; implementation baseline is
   expectations verified. Commands: [tests/reference/README.md](tests/reference/README.md).
 - [x] Plain-text annotator, committed as `d079112`: costs/ranking, options,
   call trees and source annotation; 87 same-file semantic comparisons passed.
-  Boundaries: [annotator README](crates/callgrind-annotate/README.md).
+  Boundaries: [annotator README](crates/callgrind-annotate-rs/README.md).
 - [x] Latest observed complete Rust gates: 169 tests, formatting and Clippy;
   Python suite: 36 tests. The current native/Nix result is recorded above.
 

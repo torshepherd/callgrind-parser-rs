@@ -116,12 +116,12 @@ crate dependency. Preserve a no-`protoc`, no-system-zlib ordinary Cargo build.
 ## Current state
 
 The parser has an incremental decoder, an owned interned model, and active
-conformance, property, and streaming tests. `callgrind-annotate` implements
+conformance, property, and streaming tests. `callgrind-annotate-rs` implements
 plain-text reports, call trees and source annotation. `pprof2callgrind` implements
 exact graph/tree export; read its README before changing conversion policy.
 `callgrind2pprof` exports exact flat exclusive-cost samples; read its README for
 unit, identity and original-position labels. UI frontends remain stubs.
-Read `crates/callgrind-annotate/README.md` before changing its policies.
+Read `crates/callgrind-annotate-rs/README.md` before changing its policies.
 Keep rendering barebones like the original: aligned text, no colors or TUI.
 Read `TODO.md` for the ordered work list and `NOTES.md` for design, compatibility
 limits, and validation evidence. The Callgrind/KCachegrind source audit is in

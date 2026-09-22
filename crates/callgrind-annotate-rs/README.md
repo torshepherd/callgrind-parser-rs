@@ -1,4 +1,8 @@
-# callgrind-annotate
+# callgrind-annotate-rs
+
+The deliberate `-rs` suffix distinguishes this independent Rust implementation
+from upstream's Perl `callgrind_annotate` and avoids confusing bug attribution.
+Keep the package and binary names distinct from upstream.
 
 A plain-text Rust alternative to Valgrind's `callgrind_annotate`, using the
 shared production parser. No colors, interactive UI, external Perl dependency,
@@ -6,14 +10,14 @@ or new Callgrind grammar implementation. It prints aligned cost columns,
 function rankings, optional caller/callee rows and annotated source.
 
 ```bash
-./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- \
+./scripts/cargo.sh run -p callgrind-annotate-rs --locked --offline -- \
   --auto=no --show=Ir,Dr --sort=Ir --threshold=99 profile.callgrind
 
-./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- \
+./scripts/cargo.sh run -p callgrind-annotate-rs --locked --offline -- \
   --inclusive=yes --tree=both --show-percs=no profile.callgrind
 
 # Source lookup defaults to recorded paths; add search roots as needed.
-./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- \
+./scripts/cargo.sh run -p callgrind-annotate-rs --locked --offline -- \
   --context=8 -I path/to/sources profile.callgrind source.c
 ```
 
@@ -111,10 +115,10 @@ parser model for provenance, jumps, target positions, and absent-name fidelity.
 ## Validation
 
 ```bash
-./scripts/cargo.sh test -p callgrind-annotate --locked --offline
-./scripts/cargo.sh build -p callgrind-annotate --locked --offline
+./scripts/cargo.sh test -p callgrind-annotate-rs --locked --offline
+./scripts/cargo.sh build -p callgrind-annotate-rs --locked --offline
 python3 tests/reference/check_annotate.py \
-  --rust target/debug/callgrind-annotate \
+  --rust target/debug/callgrind-annotate-rs \
   --reference /path/to/valgrind/bin/callgrind_annotate \
   --matrix /path/to/the/12-case-matrix
 ```

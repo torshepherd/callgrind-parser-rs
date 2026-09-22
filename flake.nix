@@ -65,7 +65,7 @@
               python3 ${./tests/reference}/check_matrix.py "$output" \
                 --plan ${plan} --inspect ${rustWorkspace}/libexec/inspect
               python3 ${./tests/reference}/check_annotate.py \
-                --rust ${rustWorkspace}/bin/callgrind-annotate \
+                --rust ${rustWorkspace}/bin/callgrind-annotate-rs \
                 --reference ${pkgs.valgrind}/bin/callgrind_annotate \
                 --parser-fixtures ${./crates/callgrind-parser/tests/fixtures} \
                 --matrix "$output" --plan ${plan} --artifacts "$output/comparisons"

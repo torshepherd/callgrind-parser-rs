@@ -11,7 +11,7 @@ and subtly incompatible reader.
 
 > [!NOTE]
 > The parser foundation is implemented with incremental decoding, an owned
-> interned model, and active grammar/property tests. `callgrind-annotate` now
+> interned model, and active grammar/property tests. `callgrind-annotate-rs` now
 > provides plain-text reports, call trees and source annotation.
 > `pprof2callgrind` exports exact-integer graphs or context trees;
 > `callgrind2pprof` exports exact exclusive-cost flat profiles. UI applications
@@ -20,11 +20,11 @@ and subtly incompatible reader.
 ## Annotate a profile
 
 ```console
-./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- --auto=no profile.callgrind
-./scripts/cargo.sh run -p callgrind-annotate --locked --offline -- --inclusive=yes --tree=both profile.callgrind
+./scripts/cargo.sh run -p callgrind-annotate-rs --locked --offline -- --auto=no profile.callgrind
+./scripts/cargo.sh run -p callgrind-annotate-rs --locked --offline -- --inclusive=yes --tree=both profile.callgrind
 ```
 
-See the [annotator guide](crates/callgrind-annotate/README.md) for options and
+See the [annotator guide](crates/callgrind-annotate-rs/README.md) for options and
 compatibility boundaries. Output is deliberately plain aligned text. The
 default keeps inline-attributed costs with their defining function;
 `--grouping=source` selects the traditional Perl-style split.
@@ -84,7 +84,7 @@ Callgrind format well when Callgrind is the right producer.
 | Package | Purpose |
 | --- | --- |
 | `callgrind-parser` | The primary library: parse Callgrind files into a shared data model and expose analysis primitives. |
-| `callgrind-annotate` | A compatible, scriptable Rust alternative to `callgrind_annotate`. |
+| `callgrind-annotate-rs` | A compatible, scriptable Rust alternative to `callgrind_annotate`. |
 | `callgrind2pprof` | Exact exclusive-cost Callgrind export to flat pprof profiles. |
 | `pprof2callgrind` | Exact pprof graph/context-tree export with all value columns. |
 | `pprof-profile` | Shared schema and bounded protobuf/gzip I/O. |

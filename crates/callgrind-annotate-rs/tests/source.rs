@@ -1,4 +1,4 @@
-use callgrind_annotate::{Analysis, Options, Selection, render};
+use callgrind_annotate_rs::{Analysis, Options, Selection, render};
 use callgrind_parser::parse_profile;
 use clap::Parser;
 use std::path::PathBuf;

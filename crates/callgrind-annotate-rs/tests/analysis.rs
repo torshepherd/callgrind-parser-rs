@@ -1,4 +1,4 @@
-use callgrind_annotate::{Analysis, Options, Selection, render, render_tsv, select_part};
+use callgrind_annotate_rs::{Analysis, Options, Selection, render, render_tsv, select_part};
 use callgrind_parser::parse_profile;
 use clap::Parser;
 
@@ -10,7 +10,7 @@ fn explicit_source_grouping_preserves_raw_function_view() {
     .unwrap();
     let original = p.clone();
     let grouped =
-        Analysis::build_grouped(&p, &p.parts[0], callgrind_annotate::Grouping::Source).unwrap();
+        Analysis::build_grouped(&p, &p.parts[0], callgrind_annotate_rs::Grouping::Source).unwrap();
     assert_eq!(grouped.functions.len(), 3);
     let pieces: Vec<_> = grouped
         .functions

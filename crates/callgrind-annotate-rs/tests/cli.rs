@@ -1,7 +1,7 @@
 use std::process::Command;
 
 fn command() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_callgrind-annotate"))
+    Command::new(env!("CARGO_BIN_EXE_callgrind-annotate-rs"))
 }
 fn fixture() -> String {
     format!(
@@ -15,7 +15,11 @@ fn help_and_version() {
     for arg in ["--help", "--version"] {
         let out = command().arg(arg).output().unwrap();
         assert!(out.status.success());
-        assert!(!out.stdout.is_empty());
+        assert!(
+            String::from_utf8(out.stdout)
+                .unwrap()
+                .contains("callgrind-annotate-rs")
+        );
     }
 }
 #[test]
@@ -58,7 +62,7 @@ fn unsupported_event_fails_before_report_output() {
     assert!(
         String::from_utf8(out.stderr)
             .unwrap()
-            .contains("unrecorded event")
+            .starts_with("callgrind-annotate-rs: unknown or unrecorded event")
     );
 }
 #[test]

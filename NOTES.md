@@ -204,6 +204,16 @@ claimed. Documentation diff and local links are checked before publication.
 [ui-vitest]: https://vitest.dev/guide/browser/
 [ui-playwright]: https://playwright.dev/docs/test-webserver
 
+### 2026-09-16: distinguish the Rust annotator from upstream
+
+- Renamed the crate directory, package and binary to `callgrind-annotate-rs`.
+  The deliberate `-rs` suffix distinguishes this independent implementation
+  from upstream's Perl `callgrind_annotate` and avoids confusing bug attribution.
+  Updated current commands and directory links; historical prose names remain.
+- Publication validation on 2026-09-22: formatting, Clippy, all 169 nextest
+  tests, Cargo tests/doctests and 36 Python comparator tests passed. Nix is
+  unavailable locally; native integration is checked by the push-triggered CI.
+
 ### 2026-09-16: inclusive-cost and cycle design for the shared analysis layer
 
 - User requested a deeper design pass before implementation, with findings
@@ -551,7 +561,7 @@ claimed. Documentation diff and local links are checked before publication.
 - Inclusive display follows incoming-edge sums (including recursion), falling
   back to self plus outgoing edges. Zero-count calls are never self costs;
   declaration-free program totals always use self sums. Full policies and
-  intentional deviations are in `crates/callgrind-annotate/README.md`.
+  intentional deviations are in `crates/callgrind-annotate-rs/README.md`.
 - Same-file differential: 87 invocations passed across two minimal fixtures
   and all 12 SQLite profiles, comparing 35,080 nonzero function rows plus
   program totals and call trees. Covers default/self/inclusive, full tables,

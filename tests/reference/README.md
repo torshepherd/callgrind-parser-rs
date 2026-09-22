@@ -93,9 +93,9 @@ reference success is a separate gate from a hermetic Nix pass.
 ## Rust annotator differential checks
 
 ```bash
-./scripts/cargo.sh build -p callgrind-annotate --locked --offline
+./scripts/cargo.sh build -p callgrind-annotate-rs --locked --offline
 python3 tests/reference/check_annotate.py \
-  --rust target/debug/callgrind-annotate \
+  --rust target/debug/callgrind-annotate-rs \
   --reference /path/to/valgrind/bin/callgrind_annotate \
   --matrix "$matrix_dir" --artifacts "$matrix_root/reports"
 ```

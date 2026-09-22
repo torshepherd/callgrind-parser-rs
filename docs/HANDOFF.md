@@ -4,6 +4,12 @@ Updated 2026-09-21 (frontend planning; implementation/validation unchanged).
 Repository: `torshepherd/callgrind-parser-rs`.
 Default branch verified for this update: **master**. Resolve it again when resuming.
 
+Rename publication, 2026-09-22: the annotator crate, directory and executable
+are now `callgrind-annotate-rs`; commands and the Nix integration runner use that
+name. Local formatting, Clippy, 169 nextest tests, Cargo tests/doctests and 36
+Python tests passed. Native integration awaits the rename's push-triggered CI;
+the completed runs below remain the prior implementation evidence.
+
 ## Start here
 
 The parser, durable reference harness and plain-text annotator are implemented.
@@ -30,7 +36,7 @@ results are implied by these notes.
 Read [AGENTS.md](../AGENTS.md) first, then this document. Implementation details
 and commands live in [the workload guide](../workload/README.md),
 [the reference guide](../tests/reference/README.md),
-[the annotator guide](../crates/callgrind-annotate/README.md), and
+[the annotator guide](../crates/callgrind-annotate-rs/README.md), and
 [SOURCE-AUDIT.md](SOURCE-AUDIT.md). Before the converter, also read
 [the pprof exporter audit](PPROF-CALLGRIND-AUDIT.md). [TODO.md](../TODO.md) is the ordered checklist;
 [NOTES.md](../NOTES.md) retains decisions and papercuts.

@@ -1,4 +1,6 @@
-use callgrind_annotate::{Analysis, Format, Options, Selection, render, render_tsv, select_part};
+use callgrind_annotate_rs::{
+    Analysis, Format, Options, Selection, render, render_tsv, select_part,
+};
 use clap::Parser;
 use std::{
     fs::File,
@@ -28,7 +30,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("callgrind-annotate: {error}");
+            eprintln!("callgrind-annotate-rs: {error}");
             ExitCode::FAILURE
         }
     }
