@@ -1,5 +1,9 @@
 //! A deliberately small streaming writer: one part, instr/line positions,
 //! exclusive rows and call edges. No derived events, jumps or relative PCs.
+//!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
 use std::{
     collections::BTreeMap,
     io::{self, Write},

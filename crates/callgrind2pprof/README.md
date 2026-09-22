@@ -1,5 +1,9 @@
 # callgrind2pprof
 
+> **Experimental — documentation status:** This crate is experimental. Its
+> documentation is fully LLM-generated and may contain errors or outdated claims.
+> The documentation will receive a review and cleanup pass before the 1.0 release.
+
 Export exact exclusive Callgrind costs as gzip-compressed pprof protobuf.
 Every stored event column is retained. The production parser owns all grammar;
 the shared `pprof-profile` crate owns protobuf validation and gzip I/O.

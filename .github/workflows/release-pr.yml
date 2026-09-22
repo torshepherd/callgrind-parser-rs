@@ -1,0 +1,44 @@
+name: Prepare release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: release-pr
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'torshepherd/callgrind-parser-rs' && vars.RELEASES_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Prepare versions and changelogs
+        id: release
+        uses: release-plz/action@b8d6b54b02889ff2ae2bb82e8b57c3a8fc1683a5
+        with:
+          command: release-pr
+          version: 0.3.169
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Explicitly run CI and the binary build preview on the release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).head_branch }}
+        run: |
+          gh workflow run ci.yml --ref "$RELEASE_BRANCH"
+          gh workflow run release.yml --ref "$RELEASE_BRANCH" -f tag=dry-run

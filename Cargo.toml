@@ -3,15 +3,16 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/torshepherd/callgrind-parser-rs"
 
 [workspace.dependencies]
-callgrind-parser = { path = "crates/callgrind-parser" }
-callgrind-writer = { path = "crates/callgrind-writer" }
-pprof-profile = { path = "crates/pprof-profile" }
+callgrind-parser = { version = "0.1.0", path = "crates/callgrind-parser" }
+callgrind-writer = { version = "0.1.0", path = "crates/callgrind-writer" }
+pprof-profile = { version = "0.1.0", path = "crates/pprof-profile" }
 clap = { version = "4.5", features = ["derive"] }
 crossterm = "0.29"
 flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
@@ -21,3 +22,7 @@ nom = "8"
 lasso = "0.7.3"
 smallvec = "1.15"
 proptest = { version = "1.11", default-features = false, features = ["std"] }
+
+[profile.dist]
+inherits = "release"
+lto = "thin"

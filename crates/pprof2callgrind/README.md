@@ -1,5 +1,9 @@
 # pprof2callgrind
 
+> **Experimental — documentation status:** This crate is experimental. Its
+> documentation is fully LLM-generated and may contain errors or outdated claims.
+> The documentation will receive a review and cleanup pass before the 1.0 release.
+
 Convert pprof raw protobuf or gzip into exact-integer Callgrind, retaining every
 sample-value column. No Go, protoc, system zlib or symbolizer is needed.
 

@@ -1,4 +1,8 @@
 //! Shared pprof schema and bounded, validated protobuf/gzip I/O. No protoc.
+//!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
 pub mod proto;
 
 use flate2::{Compression, GzBuilder, bufread::GzDecoder};

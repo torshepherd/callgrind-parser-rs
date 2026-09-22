@@ -7,8 +7,20 @@ Default branch verified for this update: **master**. Resolve it again when resum
 Rename publication, 2026-09-22: the annotator crate, directory and executable
 are now `callgrind-annotate-rs`; commands and the Nix integration runner use that
 name. Local formatting, Clippy, 169 nextest tests, Cargo tests/doctests and 36
-Python tests passed. Native integration awaits the rename's push-triggered CI;
-the completed runs below remain the prior implementation evidence.
+Python tests passed. All three jobs passed in the rename's
+[push run 35771501753](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35771501753)
+for `07c0c89ed3ef84a5db0adfcc2d011fbd3b148a0e`, including native integration.
+
+Publication docs now prominently mark the project and all six implemented
+crates as experimental, disclose fully LLM-generated documentation, and commit
+to a documentation review/cleanup before 1.0. Preserve these notices in the
+registry READMEs and crate-level API docs when setting up releases.
+
+First-release setup is prepared at 0.1.0 for six crates, with release-plz,
+Trusted Publishing configuration instructions and four-platform cargo-dist /
+cargo-binstall workflows. See [RELEASING.md](RELEASING.md). Local gates and
+package dry runs passed; actual initial publication, account configuration
+and binary/native CI verification remain pending at this checkpoint.
 
 ## Start here
 

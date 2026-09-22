@@ -2,3 +2,4 @@
 /results
 /target
 /.dev
+__pycache__/

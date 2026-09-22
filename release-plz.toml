@@ -1,0 +1,13 @@
+[workspace]
+release_always = false
+dependencies_update = false
+git_release_enable = false
+git_tag_name = "{{ package }}-v{{ version }}"
+
+[[package]]
+name = "textgrind"
+release = false
+
+[[package]]
+name = "webgrind"
+release = false

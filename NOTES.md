@@ -6,6 +6,38 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-22: first-release preparation
+
+- User authorized publication of the six implemented crates, release-plz
+  automation and Linux x86-64/ARM64 plus macOS Intel/Apple Silicon binaries.
+  Prepared shared version 0.1.0, registry dependency requirements, repository
+  metadata and packaged dual-license files. UI stubs remain unpublished.
+- Release-plz 0.3.169 prepares release PRs and publishes only release commits
+  after full CI. Cargo-dist 0.33.0 owns binary GitHub Releases. Explicit
+  workflow dispatches let the built-in GitHub token start PR validation and
+  binary builds; a personal GitHub token/App is unnecessary for this setup.
+- Added a tested exact-commit CI gate and four-platform cargo-binstall checks
+  with compilation/quickinstall fallback disabled. The release configuration
+  and recovery procedure are in docs/RELEASING.md. Automation is held behind
+  RELEASES_ENABLED until initial publication and Trusted Publishing are set up.
+- Local validation: all six crates passed Cargo's workspace publication dry
+  run and packaged-README/license inspection. Formatting, Clippy, 169 nextest
+  tests, Cargo tests/doctests, 36 comparator tests, five release-gate tests,
+  workspace rustdoc, dist plan and actionlint passed. Native CI, first uploads
+  and the four-platform binary workflow still need to run for this slice.
+
+### 2026-09-22: experimental status and documentation provenance
+
+- User requested prominent publication notices: all libraries/tools are
+  experimental, project documentation is fully LLM-generated, and the docs
+  will receive a review and cleanup pass before 1.0. Added the notice to the
+  project README, all six implemented crates' READMEs and their crate-level
+  API docs. Added missing parser/writer/pprof library READMEs and explicit
+  Cargo `readme` fields so each registry page receives its own notice.
+- Rename commit `07c0c89ed3ef84a5db0adfcc2d011fbd3b148a0e` passed all three
+  jobs in [push run 35771501753](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35771501753),
+  including SQLite smoke/full flake checks and pprof/KCachegrind integration.
+
 ### 2026-09-21: frontend, remote workflow, binary tooling and testing discussion
 
 Status: requirements and candidate tradeoffs, **not a finalized stack**. The

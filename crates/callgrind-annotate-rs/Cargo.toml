@@ -1,9 +1,13 @@
 [package]
 name = "callgrind-annotate-rs"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+keywords = ["callgrind", "profiling", "performance"]
+categories = ["development-tools::profiling"]
 description = "Rust reimplementation of callgrind_annotate"
 
 [dependencies]

@@ -1,5 +1,6 @@
 [package]
 name = "textgrind"
+publish = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,3 +12,6 @@ callgrind-parser.workspace = true
 clap.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
+
+[package.metadata.dist]
+dist = false

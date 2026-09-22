@@ -1,9 +1,13 @@
 [package]
 name = "pprof-profile"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+keywords = ["callgrind", "profiling", "performance"]
+categories = ["development-tools::profiling"]
 description = "Shared validated pprof protobuf and gzip I/O for Callgrind tools"
 
 [dependencies]

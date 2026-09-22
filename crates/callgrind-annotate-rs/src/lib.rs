@@ -1,5 +1,9 @@
 //! Annotation analysis and rendering over the production Callgrind parser.
 //!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
+//!
 //! Inclusive function costs follow the annotator's incoming-edge policy, not
 //! recursive graph summation or KCachegrind's cycle presentation. Raw self and
 //! edge costs are always retained separately. See this crate's README.

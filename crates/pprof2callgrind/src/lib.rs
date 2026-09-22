@@ -1,4 +1,8 @@
 //! Convert pprof's observed stacks to Callgrind without floating-point scaling.
+//!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
 use callgrind_writer::{Event, Function, Location, Writer};
 use pprof_profile::{Error, proto, string};
 use std::{

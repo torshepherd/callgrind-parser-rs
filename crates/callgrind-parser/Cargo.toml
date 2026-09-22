@@ -1,9 +1,13 @@
 [package]
 name = "callgrind-parser"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+keywords = ["callgrind", "profiling", "performance"]
+categories = ["development-tools::profiling"]
 description = "Parser library for Callgrind profile data"
 
 [lib]

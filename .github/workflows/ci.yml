@@ -100,6 +100,9 @@ jobs:
       - name: Test the Python reference comparators
         run: python3 -m unittest discover -s tests/reference -v
 
+      - name: Test the release CI gate
+        run: python3 -m unittest discover -s tests/release -v
+
   integration:
     name: Callgrind integration (${{ matrix.workload }})
     runs-on: ubuntu-24.04

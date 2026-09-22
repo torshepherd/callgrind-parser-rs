@@ -1,5 +1,9 @@
 # callgrind-annotate-rs
 
+> **Experimental — documentation status:** This crate is experimental. Its
+> documentation is fully LLM-generated and may contain errors or outdated claims.
+> The documentation will receive a review and cleanup pass before the 1.0 release.
+
 The deliberate `-rs` suffix distinguishes this independent Rust implementation
 from upstream's Perl `callgrind_annotate` and avoids confusing bug attribution.
 Keep the package and binary names distinct from upstream.

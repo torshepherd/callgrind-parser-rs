@@ -1,0 +1,51 @@
+name: Verify published binary installation
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624
+        env:
+          BINSTALL_VERSION: 1.23.0
+      - name: Install only our release artifacts and execute each binary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAN: ${{ inputs.plan }}
+          TARGET: ${{ matrix.target }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "binstall-smoke"
+          for release in json.loads(os.environ["PLAN"])["releases"]:
+              name, version = release["app_name"], release["app_version"]
+              subprocess.run(["cargo", "binstall", f"{name}@{version}", "--no-confirm",
+                              "--strategies", "crate-meta-data", "--target", os.environ["TARGET"],
+                              "--root", str(root)], check=True)
+              executable = root / "bin" / name
+              output = subprocess.check_output([str(executable), "--version"], text=True)
+              assert name in output and version in output, output
+              subprocess.run([str(executable), "--help"], check=True)
+          PY

@@ -1,0 +1,67 @@
+name: Publish crates
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-crates
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'torshepherd/callgrind-parser-rs' &&
+      vars.RELEASES_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    environment: crates-io
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require all CI gates for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/check-release-ci.py HEAD --require-head
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Publish using crates.io Trusted Publishing
+        id: release
+        uses: release-plz/action@b8d6b54b02889ff2ae2bb82e8b57c3a8fc1683a5
+        with:
+          command: release
+          version: 0.3.169
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Dispatch binary releases from the published tags
+        if: steps.release.outputs.releases_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASES: ${{ steps.release.outputs.releases }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          binaries = {"callgrind-annotate-rs", "pprof2callgrind", "callgrind2pprof"}
+          for release in json.loads(os.environ["RELEASES"]):
+              if release["package_name"] in binaries:
+                  tag = release["tag"]
+                  subprocess.run(["gh", "workflow", "run", "release.yml", "--ref", tag,
+                                  "-f", f"tag={tag}"], check=True)
+          PY

@@ -1,5 +1,10 @@
 # callgrind-parser-rs
 
+> **Experimental — documentation status:** The libraries and tools in this project
+> are experimental. The project documentation is fully LLM-generated and may
+> contain errors or outdated claims. It will receive a review and cleanup pass
+> before the 1.0 release.
+
 `callgrind-parser-rs` is a Rust library for reading and analyzing the
 [Callgrind profile format](https://valgrind.org/docs/manual/cl-format.html).
 The repository also houses a family of frontends built on the same parser:
@@ -8,6 +13,9 @@ annotation and conversion tools, a terminal interface, and a web interface.
 The parser is the center of the project. The applications exist to make
 Callgrind data useful in more places without each tool growing its own partial
 and subtly incompatible reader.
+
+The release process for crates.io packages and prebuilt Linux/macOS binaries
+is described in [the publishing guide](docs/RELEASING.md).
 
 > [!NOTE]
 > The parser foundation is implemented with incremental decoding, an owned

@@ -1,5 +1,6 @@
 [package]
 name = "webgrind"
+publish = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,3 +10,6 @@ description = "Web UI and parser-backed service for Callgrind profiles"
 [dependencies]
 callgrind-parser.workspace = true
 clap.workspace = true
+
+[package.metadata.dist]
+dist = false

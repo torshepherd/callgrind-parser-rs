@@ -1,5 +1,9 @@
 //! Incremental Callgrind decoding and an owned, interned semantic model.
 //!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
+//!
 //! Use [`parse_reader`] for files, [`parse_profile`] for strings, or [`Decoder`]
 //! to consume records without retaining a complete profile. All paths share
 //! the same grammar and state machine. See NOTES.md for scope and dialects.

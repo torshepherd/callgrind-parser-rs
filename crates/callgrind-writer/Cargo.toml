@@ -1,9 +1,13 @@
 [package]
 name = "callgrind-writer"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+keywords = ["callgrind", "profiling", "performance"]
+categories = ["development-tools::profiling"]
 description = "Explicit-position, exact-integer Callgrind output"
 
 [dev-dependencies]

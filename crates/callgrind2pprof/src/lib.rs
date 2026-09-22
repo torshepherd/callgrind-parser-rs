@@ -1,4 +1,8 @@
 //! Exact exclusive-cost export. Aggregate edges do not establish sampled stacks.
+//!
+//! **Experimental — documentation status:** This crate is experimental. Its
+//! documentation is fully LLM-generated and may contain errors or outdated claims.
+//! The documentation will receive a review and cleanup pass before the 1.0 release.
 use callgrind_parser::{PositionKind, Profile, ProfileSymbols, Record, StringId};
 use pprof_profile::{Error, proto};
 use std::{
