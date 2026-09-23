@@ -108,7 +108,10 @@ Expect little: all three are small, dated, or likely low-effort.
 - [x] Build and distribute Linux x86-64/ARM64 and macOS Intel/Apple Silicon
   binaries with cargo-dist. Shared v0.1.0 release and all 12 cargo-binstall
   installations passed in [run 35804655680](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35804655680).
-- [ ] Confirm enabled release-plz workflow execution after bootstrap.
+- [x] Confirm enabled release-plz workflow execution after bootstrap:
+  [preparation](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35805630143)
+  and [publishing check](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35806148596)
+  succeeded. No new package changes existed, so no PR or duplicate upload was made.
 
 Record decisions, findings and papercuts in `NOTES.md`. Update this checklist
 and the handoff when a gate's actual status changes; historical experiments

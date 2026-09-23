@@ -25,8 +25,17 @@ See [RELEASING.md](RELEASING.md). The shared
 passed all builds and 12 native cargo-binstall installations in
 [run 35804655680](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35804655680).
 Default binstall discovery needs the shared version tag; preserve that policy
-in future automation. Ten local release automation tests pass. The release-plz
-workflows still await their enabled execution checkpoint.
+in future automation. Ten local release automation tests pass. Automation is
+enabled (`RELEASES_ENABLED=true`):
+[preparation run 35805630143](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35805630143)
+and [publishing run 35806148596](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35806148596)
+succeeded on `c4fee7ee09f6ee77db5b7a66fcb7817d0805ad06` after its
+[full CI run 35805630581](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35805630581)
+passed all three jobs. There were no unreleased package changes, so these were
+successful no-op runs; initial publication used the existing local Cargo login.
+All six live crates.io READMEs and docs.rs API landing pages were checked for
+the requested documentation notice. Ordinary local cargo-binstall selection
+also installed all three 0.1.0 CLIs from GitHub without compilation fallback.
 
 ## Start here
 

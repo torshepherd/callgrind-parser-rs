@@ -32,6 +32,20 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
   source compilation and quickinstall fallback disabled. Local workflow-fix
   checks passed: ten release automation tests, actionlint, formatting, Clippy,
   169 nextest tests and Cargo tests/doctests.
+- Enabled automation and verified release-plz preparation
+  ([35805630143](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35805630143))
+  and publishing
+  ([35806148596](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35806148596))
+  on `c4fee7ee09f6ee77db5b7a66fcb7817d0805ad06`. Its
+  [full CI run 35805630581](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35805630581)
+  passed all three jobs. Release-plz correctly found no unreleased package
+  changes; these runs did not create a PR or upload a duplicate version.
+  Initial publication used the user's local Cargo login; a future changed
+  version will exercise the configured OIDC publication path.
+- Verified the experimental/fully-LLM-generated/pre-1.0-cleanup notices on all
+  six live crates.io READMEs and all six docs.rs API landing pages. The normal
+  local binstall command, without a target override and with compilation
+  disabled, installed all three 0.1.0 CLIs from the shared GitHub Release.
 
 ### 2026-09-22: first-release preparation
 
