@@ -6,6 +6,15 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-23: agent release instructions
+
+- Added a publishing section to `AGENTS.md`, linking `docs/RELEASING.md` and
+  summarizing the release PR, exact-commit CI gate, Trusted Publishing,
+  shared binary tag, native installation checks and recovery rules. Future
+  agents now encounter the release procedure in their repository entry point.
+- The preceding documentation commit `26da2de2774bc04adb8676edc792a0715abebff7`
+  passed [full CI run 35806884070](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35806884070).
+
 ### 2026-09-23: first crates published; binary discovery correction
 
 - Published all six implemented crates at 0.1.0 from

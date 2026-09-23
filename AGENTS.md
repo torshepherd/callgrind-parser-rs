@@ -47,6 +47,40 @@ Nix is optional for daily Rust work and owns the separate pinned SQLite/
 Valgrind integration environment. `.codex/setup.sh` no longer installs Nix.
 Use an existing Nix installation or a suitably configured CI runner for it.
 
+## Publishing releases
+
+Read [docs/RELEASING.md](docs/RELEASING.md) before publishing or changing release
+automation. The six implemented crates are published; `textgrind` and `webgrind`
+remain excluded. Preserve the upfront experimental and fully LLM-generated
+documentation notices until the promised review and cleanup before 1.0.
+
+Release-plz maintains a release PR with workspace version and changelog updates.
+When a release is requested, review its changes, semver suggestions and checks,
+then merge it. To prepare the PR on demand, run
+`gh workflow run release-pr.yml --ref master`. Normal development uses direct
+pushes; merging the release PR is the publishing checkpoint.
+
+The merged commit must pass all three push CI jobs, including both native
+integration jobs. `release-plz.yml` verifies that exact commit and current
+`master`, then publishes through crates.io Trusted Publishing in the `crates-io`
+environment. Existing crates need no local login or stored registry token.
+For a new crate's first publication, follow the guide's bootstrap procedure;
+the development wrapper's Cargo home differs from the normal login location.
+Never print or copy credentials into the repository.
+
+Package source tags use `PACKAGE-vVERSION`. CLI releases also use the shared
+`vVERSION` tag required by cargo-binstall's default discovery. The publishing
+workflow explicitly dispatches cargo-dist's `release.yml`, which builds the
+three CLIs for Linux x86-64/ARM64 and macOS Intel/Apple Silicon. Keep explicit
+dispatches: events created by `GITHUB_TOKEN` do not start downstream workflows.
+Regenerate `release.yml` with pinned cargo-dist after changing its configuration.
+
+Inspect completed publishing and binary runs, registry versions, and all four
+native cargo-binstall verification jobs before reporting release success.
+Record results and run URLs in `NOTES.md` and `docs/HANDOFF.md`. Never move an
+existing release tag or overwrite a published version; follow the guide for
+retries, and use a new version when repairing released source.
+
 ## Required commands
 
 Run from the repository root:
