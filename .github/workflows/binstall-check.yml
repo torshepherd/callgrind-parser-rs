@@ -27,8 +27,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624
-        env:
-          BINSTALL_VERSION: 1.23.0
+        with:
+          version: 1.23.0
       - name: Install only our release artifacts and execute each binary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

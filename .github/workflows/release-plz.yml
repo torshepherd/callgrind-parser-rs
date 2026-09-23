@@ -50,18 +50,9 @@ jobs:
           version: 0.3.169
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Dispatch binary releases from the published tags
+      - name: Dispatch the shared-version binary release
         if: steps.release.outputs.releases_created == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASES: ${{ steps.release.outputs.releases }}
-        run: |
-          python3 - <<'PY'
-          import json, os, subprocess
-          binaries = {"callgrind-annotate-rs", "pprof2callgrind", "callgrind2pprof"}
-          for release in json.loads(os.environ["RELEASES"]):
-              if release["package_name"] in binaries:
-                  tag = release["tag"]
-                  subprocess.run(["gh", "workflow", "run", "release.yml", "--ref", tag,
-                                  "-f", f"tag={tag}"], check=True)
-          PY
+        run: python3 scripts/dispatch-binaries.py

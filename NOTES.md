@@ -6,6 +6,33 @@ user-facing facts to `README.md` and stable execution rules to `AGENTS.md`.
 
 ## Current direction
 
+### 2026-09-23: first crates published; binary discovery correction
+
+- Published all six implemented crates at 0.1.0 from
+  `7127399533f73b1806260bab316b1c9efecd30de`. Its full native and Rust CI passed
+  in [run 35796758378](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35796758378).
+  Crates.io accepted five new crates, then rate-limited the sixth; retried
+  pprof2callgrind successfully after the server's stated cooldown.
+- Configured and read back all six crates' Trusted Publishers for this repo,
+  `release-plz.yml`, environment `crates-io`. GitHub's environment is restricted
+  to master and Actions may create release PRs. No long-lived registry or
+  GitHub token was added to Actions.
+- Package-specific binary releases built/uploaded successfully but failed
+  cargo-binstall checks. Local debug reproduction showed default discovery
+  tries only `VERSION` / `vVERSION` tags. Created shared v0.1.0 at the same
+  immutable source commit and dispatched all three CLIs together. Future
+  automation now creates one shared version tag and release; package source
+  tags remain. Existing published crate versions and tags were preserved.
+- Fixed the binstall action version pin to use its `with.version` input;
+  setting BINSTALL_VERSION outside the action is overridden by the action.
+- Shared [v0.1.0 release](https://github.com/torshepherd/callgrind-parser-rs/releases/tag/v0.1.0)
+  completed in [run 35804655680](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35804655680):
+  all builds, uploads and four native installation jobs passed. Each job
+  installed and executed all three CLIs (12 successful installations) with
+  source compilation and quickinstall fallback disabled. Local workflow-fix
+  checks passed: ten release automation tests, actionlint, formatting, Clippy,
+  169 nextest tests and Cargo tests/doctests.
+
 ### 2026-09-22: first-release preparation
 
 - User authorized publication of the six implemented crates, release-plz

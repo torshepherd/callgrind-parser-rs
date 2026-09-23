@@ -25,6 +25,23 @@ is described in [the publishing guide](docs/RELEASING.md).
 > `callgrind2pprof` exports exact exclusive-cost flat profiles. UI applications
 > remain stubs; full dialect support is not claimed.
 
+## Install
+
+Use the parser as a library:
+
+```console
+cargo add callgrind-parser
+```
+
+Prebuilt CLI releases target Linux x86-64/ARM64 and macOS Intel/Apple Silicon:
+
+```console
+cargo binstall callgrind-annotate-rs pprof2callgrind callgrind2pprof
+```
+
+To build from source instead, use `cargo install --locked` with each package
+name. `textgrind` and `webgrind` remain unpublished stubs.
+
 ## Annotate a profile
 
 ```console

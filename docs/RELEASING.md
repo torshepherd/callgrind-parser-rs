@@ -25,10 +25,17 @@ publishes the changed crates with crates.io Trusted Publishing and creates
 `PACKAGE-vVERSION` tags. Ordinary Cargo packaging verification remains enabled.
 Release-plz does not create GitHub Releases; cargo-dist owns binary releases.
 
-For each published CLI, the workflow explicitly dispatches `release.yml` at
-that package's tag. The dispatch avoids GitHub's suppression of workflows
-triggered by tags created with `GITHUB_TOKEN`. The source check requires an
-existing tag at the checked-out commit and successful full CI for that commit.
+For CLI updates, the workflow creates one shared `vVERSION` tag at the release
+commit and dispatches `release.yml` there to build all three CLIs. The dispatch
+avoids GitHub's suppression of workflows triggered by tags created with
+`GITHUB_TOKEN`. The source check requires an existing tag at the checked-out
+commit and successful full CI for that commit. Existing tags are never moved.
+
+Keep the conventional `vVERSION` binary release: cargo-binstall's default
+discovery checks that tag or `VERSION`, not our package-prefixed source tags.
+Using one release matches the shared workspace version and avoids custom
+metadata in every published CLI crate. The initial package-specific releases
+are historical; the shared version release is the installation source.
 
 Cargo-dist 0.33.0 builds archives and checksums for:
 
@@ -91,7 +98,7 @@ version or move an existing release tag. A repair that changes source needs a
 new crate version. To retry an existing package release:
 
 ```console
-gh workflow run release.yml --ref PACKAGE-vVERSION -f tag=PACKAGE-vVERSION
+gh workflow run release.yml --ref vVERSION -f tag=vVERSION
 ```
 
 Record actual completed run URLs and publication results in `NOTES.md` and

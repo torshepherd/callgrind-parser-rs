@@ -16,11 +16,17 @@ crates as experimental, disclose fully LLM-generated documentation, and commit
 to a documentation review/cleanup before 1.0. Preserve these notices in the
 registry READMEs and crate-level API docs when setting up releases.
 
-First-release setup is prepared at 0.1.0 for six crates, with release-plz,
-Trusted Publishing configuration instructions and four-platform cargo-dist /
-cargo-binstall workflows. See [RELEASING.md](RELEASING.md). Local gates and
-package dry runs passed; actual initial publication, account configuration
-and binary/native CI verification remain pending at this checkpoint.
+All six implemented crates are published at 0.1.0 from
+`7127399533f73b1806260bab316b1c9efecd30de`; all three native/Rust CI jobs passed
+in [run 35796758378](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35796758378).
+All six Trusted Publishers and the master-only GitHub environment are configured.
+See [RELEASING.md](RELEASING.md). The shared
+[v0.1.0 binary release](https://github.com/torshepherd/callgrind-parser-rs/releases/tag/v0.1.0)
+passed all builds and 12 native cargo-binstall installations in
+[run 35804655680](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35804655680).
+Default binstall discovery needs the shared version tag; preserve that policy
+in future automation. Ten local release automation tests pass. The release-plz
+workflows still await their enabled execution checkpoint.
 
 ## Start here
 

@@ -98,13 +98,17 @@ Expect little: all three are small, dated, or likely low-effort.
   Rust, likely AI-generated; interesting only if it surprises us. Avoid
   getting distracted by it.
 
-## Local machine work (this host, before returning to ChatGPT sessions)
+## Publishing and distribution
 
-- [ ] Set up local crates.io publishing. `cargo login` is already done on
-  this machine; publish the parser crate when ready.
-- [ ] Set up a GitHub Actions workflow to publish to crates.io.
-- [ ] Set up GitHub Actions with cargo-dist (or equivalent) so the repo is
-  `cargo binstall`-friendly.
+- [x] Publish all six implemented crates at 0.1.0, including the parser.
+  Experimental/LLM-documentation notices are included in registry READMEs and
+  API docs. UI stubs remain unpublished.
+- [x] Configure crates.io Trusted Publishing for all six crates and implement
+  release-plz workflows. See [the release guide](docs/RELEASING.md).
+- [x] Build and distribute Linux x86-64/ARM64 and macOS Intel/Apple Silicon
+  binaries with cargo-dist. Shared v0.1.0 release and all 12 cargo-binstall
+  installations passed in [run 35804655680](https://github.com/torshepherd/callgrind-parser-rs/actions/runs/35804655680).
+- [ ] Confirm enabled release-plz workflow execution after bootstrap.
 
 Record decisions, findings and papercuts in `NOTES.md`. Update this checklist
 and the handoff when a gate's actual status changes; historical experiments
